@@ -219,9 +219,15 @@
   }
   .cell svg { width: 75%; height: 75%; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3)); }
   .cell.new-tile { animation: dropIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+  .cell.falling { animation: fallDown 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
   @keyframes dropIn {
     0% { transform: translateY(-50px) scale(0.5); opacity: 0; }
     60% { transform: translateY(5px) scale(1.1); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  @keyframes fallDown {
+    0% { transform: translateY(-40px) scale(1.1); opacity: 0; }
+    70% { transform: translateY(3px) scale(1); opacity: 1; }
     100% { transform: translateY(0) scale(1); opacity: 1; }
   }
 
@@ -570,7 +576,7 @@
     <div class="progress-fill" id="matchProgress" style="width: 0%;"></div>
   </div>
   <div class="match3-board" id="matchBoard"></div>
-  <p style="margin-top: 10px; font-size: 0.9em; color: var(--jungle);">Собирай кости в ряд! </p>
+  <p style="margin-top: 10px; font-size: 0.9em; color: var(--jungle);">Меняй местами соседние элементы, чтобы собрать линию из 3 или более одинаковых!</p>
 </div>
 
 <!-- ===== ЭНЦИКЛОПЕДИЯ ===== -->
@@ -1537,9 +1543,9 @@ function exitClimb() {
 let matchSelected = null;
 
 const LEVEL_CONFIGS = [
-  { rows: 8, cols: 8, targetScore: 400, moves: 25, items: 4 },
+  { rows: 7, cols: 7, targetScore: 400, moves: 25, items: 4 },
   { rows: 8, cols: 8, targetScore: 600, moves: 28, items: 5 },
-  { rows: 8, cols: 8, targetScore: 800, moves: 30, items: 6 }
+  { rows: 9, cols: 9, targetScore: 800, moves: 30, items: 6 }
 ];
 
 function startMatch3() {
@@ -1550,17 +1556,20 @@ function startMatch3() {
   showScreen('matchScreen');
   document.getElementById('matchTarget').textContent = state.targetScore;
   
+  // Создаём поле без начальных совпадений
   const board = [];
   for (let r = 0; r < config.rows; r++) {
     board[r] = [];
     for (let c = 0; c < config.cols; c++) {
       let item;
+      let attempts = 0;
       do {
         item = Math.floor(Math.random() * config.items);
-      } while (
-        (c >= 2 && board[r][c-1] === item && board[r][c-2] === item) ||
-        (r >= 2 && board[r-1][c] === item && board[r-2][c] === item)
-      );
+        attempts++;
+        // Проверяем, не создаст ли этот элемент совпадение
+        const createsHorizontal = c >= 2 && board[r][c-1] === item && board[r][c-2] === item;
+        const createsVertical = r >= 2 && board[r-1][c] === item && board[r-2][c] === item;
+      } while ((createsHorizontal || createsVertical) && attempts < 50);
       board[r][c] = item;
     }
   }
@@ -1578,7 +1587,7 @@ function startMatch3() {
   updateMatchHUD();
 }
 
-function renderMatchBoard() {
+function renderMatchBoard(falling = false) {
   const s = state.matchState;
   const board = s.board;
   const container = document.getElementById('matchBoard');
@@ -1588,10 +1597,14 @@ function renderMatchBoard() {
   for (let r = 0; r < s.rows; r++) {
     for (let c = 0; c < s.cols; c++) {
       const cell = document.createElement('div');
-      cell.className = 'cell new-tile';
+      if (falling) {
+        cell.className = 'cell falling';
+      } else {
+        cell.className = 'cell new-tile';
+        cell.style.animationDelay = `${(r + c) * 0.02}s`;
+      }
       cell.dataset.r = r;
       cell.dataset.c = c;
-      cell.style.animationDelay = `${(r + c) * 0.02}s`;
       const item = board[r][c];
       if (item !== null && item !== undefined) {
         cell.innerHTML = MATCH_ITEMS[item].svg;
@@ -1602,8 +1615,8 @@ function renderMatchBoard() {
   }
   
   setTimeout(() => {
-    document.querySelectorAll('.cell.new-tile').forEach(el => {
-      el.classList.remove('new-tile');
+    document.querySelectorAll('.cell.new-tile, .cell.falling').forEach(el => {
+      el.classList.remove('new-tile', 'falling');
       el.style.animationDelay = '';
     });
   }, 500);
@@ -1630,7 +1643,9 @@ function onCellClick(r, c) {
 }
 
 function highlightCell(r, c, on) {
-  const idx = r * 16 + c;
+  const s = state.matchState;
+  const cols = s.cols;
+  const idx = r * cols + c;
   const cells = document.getElementById('matchBoard').children;
   if (cells[idx]) {
     if (on) cells[idx].classList.add('selected');
@@ -1642,16 +1657,21 @@ function swap(r1, c1, r2, c2) {
   const s = state.matchState;
   s.busy = true;
   const b = s.board;
+  
+  // Меняем элементы местами
   [b[r1][c1], b[r2][c2]] = [b[r2][c2], b[r1][c1]];
   renderMatchBoard();
   
   setTimeout(() => {
     const matches = findMatches();
     if (matches.length === 0) {
+      // Если совпадений нет, возвращаем элементы обратно
+      toast('Нет совпадения!');
       [b[r1][c1], b[r2][c2]] = [b[r2][c2], b[r1][c1]];
       renderMatchBoard();
       s.busy = false;
     } else {
+      // Ход засчитан только если есть совпадение
       s.moves--;
       processMatches(matches);
     }
@@ -1705,15 +1725,17 @@ function processMatches(matches) {
   setTimeout(() => {
     matches.forEach(([r, c]) => { b[r][c] = null; });
     dropTiles();
-    fillEmpty();
-    renderMatchBoard();
+    renderMatchBoard(true); // Рендерим с анимацией падения
+    
+    fillEmpty(); // Заполняем пустые новыми элементами
+    renderMatchBoard(false); // Рендерим новые элементы с анимацией появления
     updateMatchHUD();
     
     setTimeout(() => {
       const newMatches = findMatches();
       if (newMatches.length > 0) processMatches(newMatches);
       else { s.busy = false; checkMatchEnd(); }
-    }, 200);
+    }, 350);
   }, 400);
 }
 
@@ -1777,10 +1799,17 @@ function fillEmpty() {
   const b = s.board;
   const rows = s.rows;
   const cols = s.cols;
-  const numItems = LEVEL_CONFIGS[s.rows === 8 ? Math.min(s.cols, 3) : 3]?.items || 6;
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      if (b[r][c] === null) b[r][c] = Math.floor(Math.random() * numItems);
+  // Определяем уровень по размеру поля
+  let levelIdx = 0;
+  if (rows === 8 && cols === 8) levelIdx = 1;
+  else if (rows === 9 && cols === 9) levelIdx = 2;
+  
+  const numItems = LEVEL_CONFIGS[levelIdx]?.items || 4;
+  for (let c = 0; c < cols; c++) {
+    for (let r = rows - 1; r >= 0; r--) {
+      if (b[r][c] === null) {
+        b[r][c] = Math.floor(Math.random() * numItems);
+      }
     }
   }
 }
