@@ -1,3 +1,3 @@
 # dinopedia-arch
-##Archaeologist: Encyclopedia of Dinosaurs
+## Archaeologist: Encyclopedia of Dinosaurs
 Это интерактивная игра - энциклопедия для детей старше 3 лет. Ищите ископаемых динозавров и пополняйте свою энциклопедию новыми видами динозавров. 
