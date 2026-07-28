@@ -18,6 +18,10 @@
     --dark: #2a1f14;
     --beige: #d4b896;
     --brown: #6b4423;
+    --gold: #ffc107;
+    --red: #d9534f;
+    --blue: #5bc0de;
+    --purple: #9b59b6;
   }
   body {
     font-family: 'Comic Sans MS', 'Trebuchet MS', sans-serif;
@@ -26,8 +30,21 @@
     color: var(--dark);
     overflow-x: hidden;
   }
-  .screen { display: none; min-height: 100vh; padding: 20px; }
-  .screen.active { display: flex; flex-direction: column; align-items: center; }
+  .screen { 
+    display: none; 
+    min-height: 100vh; 
+    padding: 20px; 
+    animation: fadeIn 0.4s ease-out;
+  }
+  .screen.active { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 
   .title {
     font-size: 2.6em;
@@ -49,13 +66,26 @@
     border-radius: 15px;
     cursor: pointer;
     box-shadow: 0 5px 0 var(--dark), 0 8px 15px rgba(0,0,0,0.2);
-    transition: all 0.15s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     margin: 8px;
     min-width: 220px;
     font-weight: bold;
+    position: relative;
+    overflow: hidden;
   }
-  .btn:hover { transform: translateY(2px); box-shadow: 0 3px 0 var(--dark); }
-  .btn:active { transform: translateY(5px); box-shadow: 0 0 0 var(--dark); }
+  .btn::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 0; height: 0;
+    background: rgba(255,255,255,0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.4s, height 0.4s;
+  }
+  .btn:hover::before { width: 300px; height: 300px; }
+  .btn:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 7px 0 var(--dark), 0 12px 20px rgba(0,0,0,0.3); }
+  .btn:active { transform: translateY(5px) scale(0.98); box-shadow: 0 0 0 var(--dark), 0 2px 5px rgba(0,0,0,0.2); }
   .btn.secondary { background: linear-gradient(180deg, var(--jungle-light), var(--jungle)); }
   .btn.info { background: linear-gradient(180deg, #6b8cae, #4a6b8a); }
   .btn.small { padding: 8px 18px; font-size: 1em; min-width: 100px; }
@@ -69,6 +99,11 @@
     box-shadow: 0 8px 0 rgba(0,0,0,0.15);
     max-width: 500px;
     width: 100%;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 0 rgba(0,0,0,0.15);
   }
   .input-field {
     width: 100%;
@@ -79,8 +114,14 @@
     font-family: inherit;
     margin: 8px 0;
     background: white;
+    transition: all 0.2s;
   }
-  .input-field:focus { outline: none; border-color: var(--sunset); }
+  .input-field:focus { 
+    outline: none; 
+    border-color: var(--sunset);
+    box-shadow: 0 0 0 3px rgba(255,140,66,0.3);
+    transform: scale(1.01);
+  }
 
   #menuScreen { justify-content: center; }
   .hero-char {
@@ -128,38 +169,61 @@
 
   .match3-board {
     display: grid;
-    grid-template-columns: repeat(16, 1fr);
-    gap: 2px;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
     background: var(--dark);
-    padding: 4px;
-    border-radius: 10px;
+    padding: 8px;
+    border-radius: 15px;
     border: 4px solid var(--dark);
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    max-width: 640px;
+    max-width: 500px;
     width: 100%;
     aspect-ratio: 1;
+    margin: 0 auto;
   }
   .cell {
-    background: var(--sand);
-    border-radius: 4px;
+    background: linear-gradient(145deg, var(--sand), var(--sand-dark));
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: transform 0.15s, background 0.15s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     aspect-ratio: 1;
     user-select: none;
     position: relative;
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2);
   }
-  .cell:hover { background: var(--sand-dark); transform: scale(1.05); }
-  .cell.selected { background: #ffeb3b; box-shadow: inset 0 0 0 2px var(--sunset); }
-  .cell.matched { animation: pop 0.4s ease-out forwards; }
-  @keyframes pop {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.3); background: #fff; }
-    100% { transform: scale(0); opacity: 0; }
+  .cell:hover { 
+    background: linear-gradient(145deg, var(--sand-dark), var(--sand));
+    transform: scale(1.08) rotate(2deg);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   }
-  .cell svg { width: 80%; height: 80%; }
+  .cell.selected { 
+    background: linear-gradient(145deg, #ffeb3b, #ffc107);
+    box-shadow: 0 0 0 3px var(--sunset), 0 6px 15px rgba(255,193,7,0.5);
+    animation: pulse 0.8s ease-in-out infinite;
+  }
+  .cell.matched { 
+    animation: popMatch 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1.08); }
+    50% { transform: scale(1.15); }
+  }
+  @keyframes popMatch {
+    0% { transform: scale(1) rotate(0deg); opacity: 1; }
+    40% { transform: scale(1.4) rotate(15deg); background: #fff; }
+    70% { transform: scale(0.8) rotate(-10deg); opacity: 0.7; }
+    100% { transform: scale(0) rotate(0deg); opacity: 0; }
+  }
+  .cell svg { width: 75%; height: 75%; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3)); }
+  .cell.new-tile { animation: dropIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+  @keyframes dropIn {
+    0% { transform: translateY(-50px) scale(0.5); opacity: 0; }
+    60% { transform: translateY(5px) scale(1.1); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
 
   .ency-grid {
     display: grid;
@@ -176,10 +240,23 @@
     padding: 15px 10px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    overflow: hidden;
   }
-  .dino-card:hover { transform: translateY(-4px); box-shadow: 0 8px 0 rgba(0,0,0,0.15); }
+  .dino-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s;
+  }
+  .dino-card:hover::before { left: 100%; }
+  .dino-card:hover { 
+    transform: translateY(-8px) scale(1.03); 
+    box-shadow: 0 12px 0 rgba(0,0,0,0.15), 0 6px 20px rgba(0,0,0,0.2);
+  }
   .dino-card.locked { filter: grayscale(1); opacity: 0.4; cursor: not-allowed; }
   .dino-card.locked:hover { transform: none; box-shadow: none; }
   .dino-icon { width: 80px; height: 80px; margin: 0 auto 8px; }
@@ -208,6 +285,11 @@
     max-height: 90vh;
     overflow-y: auto;
     position: relative;
+    animation: modalPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+  @keyframes modalPop {
+    from { transform: scale(0.7) translateY(-50px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
   }
   .modal-close {
     position: absolute;
@@ -664,9 +746,12 @@ function dinoSVG(dino, size=80) {
 }
 
 const MATCH_ITEMS = [
-  { id: 'stone', name: 'Камень', svg: `<svg viewBox="0 0 40 40"><ellipse cx="20" cy="22" rx="14" ry="10" fill="#8a8078" stroke="#2a1f14" stroke-width="2"/></svg>` },
-  { id: 'bone', name: 'Кость', svg: `<svg viewBox="0 0 40 40"><path d="M8 15 Q5 12 8 9 Q11 7 14 10 L26 22 Q29 19 32 22 Q35 25 32 28 Q29 31 26 28 L14 16 Q11 19 8 18 Q5 17 8 15 Z" fill="#f5ecd7" stroke="#2a1f14" stroke-width="2"/></svg>` },
-  { id: 'brush', name: 'Кисточка', svg: `<svg viewBox="0 0 40 40"><rect x="18" y="5" width="4" height="18" fill="#8b5a2b" stroke="#2a1f14" stroke-width="1.5"/><path d="M14 23 L26 23 L24 35 L16 35 Z" fill="#d4a574" stroke="#2a1f14" stroke-width="1.5"/></svg>` }
+  { id: 'stone', name: 'Камень', svg: `<svg viewBox="0 0 40 40"><ellipse cx="20" cy="22" rx="14" ry="10" fill="#8a8078" stroke="#2a1f14" stroke-width="2"/><circle cx="15" cy="18" r="3" fill="#6b6058"/><circle cx="24" cy="24" r="2" fill="#6b6058"/></svg>` },
+  { id: 'bone', name: 'Кость', svg: `<svg viewBox="0 0 40 40"><path d="M8 15 Q5 12 8 9 Q11 7 14 10 L26 22 Q29 19 32 22 Q35 25 32 28 Q29 31 26 28 L14 16 Q11 19 8 18 Q5 17 8 15 Z" fill="#f5ecd7" stroke="#2a1f14" stroke-width="2"/><circle cx="12" cy="13" r="2" fill="#e0d5c0"/><circle cx="28" cy="24" r="2" fill="#e0d5c0"/></svg>` },
+  { id: 'brush', name: 'Кисточка', svg: `<svg viewBox="0 0 40 40"><rect x="18" y="5" width="4" height="18" fill="#8b5a2b" stroke="#2a1f14" stroke-width="1.5"/><path d="M14 23 L26 23 L24 35 L16 35 Z" fill="#d4a574" stroke="#2a1f14" stroke-width="1.5"/><line x1="17" y1="26" x2="17" y2="33" stroke="#c9a074" stroke-width="1"/><line x1="20" y1="26" x2="20" y2="33" stroke="#c9a074" stroke-width="1"/><line x1="23" y1="26" x2="23" y2="33" stroke="#c9a074" stroke-width="1"/></svg>` },
+  { id: 'gem', name: 'Кристалл', svg: `<svg viewBox="0 0 40 40"><path d="M20 5 L32 15 L28 32 L12 32 L8 15 Z" fill="#9b59b6" stroke="#2a1f14" stroke-width="2"/><path d="M20 5 L24 18 L20 32 L16 18 Z" fill="#b07bc4" opacity="0.6"/><circle cx="22" cy="14" r="2" fill="#d4a5e8" opacity="0.8"/></svg>` },
+  { id: 'shell', name: 'Раковина', svg: `<svg viewBox="0 0 40 40"><ellipse cx="20" cy="22" rx="15" ry="12" fill="#d4a574" stroke="#2a1f14" stroke-width="2"/><path d="M20 10 Q20 22 20 34" stroke="#8b6f47" stroke-width="1.5"/><path d="M12 15 Q20 22 28 15" stroke="#8b6f47" stroke-width="1.5"/><path d="M10 22 Q20 28 30 22" stroke="#8b6f47" stroke-width="1.5"/></svg>` },
+  { id: 'amber', name: 'Янтарь', svg: `<svg viewBox="0 0 40 40"><ellipse cx="20" cy="20" rx="14" ry="16" fill="#ffc107" stroke="#2a1f14" stroke-width="2"/><ellipse cx="20" cy="20" rx="10" ry="12" fill="#ffca2c" opacity="0.7"/><circle cx="18" cy="16" r="3" fill="#8b6f47" opacity="0.5"/><circle cx="23" cy="24" r="2" fill="#6b4423" opacity="0.4"/></svg>` }
 ];
 
 // ============ СОСТОЯНИЕ ============
@@ -684,10 +769,24 @@ const DB = {
   getUsers() { return JSON.parse(localStorage.getItem('dino_users') || '{}'); },
   saveUsers(u) { localStorage.setItem('dino_users', JSON.stringify(u)); },
   getUser(email) { return this.getUsers()[email]; },
+  validatePassword(password) {
+    if (password.length < 6) return false;
+    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) return false;
+    return true;
+  },
   register(email, password) {
     const users = this.getUsers();
     if (users[email]) return { error: 'Пользователь уже существует' };
-    users[email] = { email, password, collection: {}, createdAt: Date.now() };
+    if (!this.validatePassword(password)) return { error: 'Пароль должен содержать минимум 6 символов, включая буквы и цифры' };
+    users[email] = { 
+      email, 
+      password, 
+      collection: {}, 
+      createdAt: Date.now(),
+      lastLogin: Date.now(),
+      totalGames: 0,
+      totalWins: 0
+    };
     this.saveUsers(users);
     return { ok: true };
   },
@@ -695,7 +794,17 @@ const DB = {
     const u = this.getUser(email);
     if (!u) return { error: 'Пользователь не найден' };
     if (u.password !== password) return { error: 'Неверный пароль' };
+    u.lastLogin = Date.now();
+    this.saveUsers(this.getUsers());
     return { ok: true, user: u };
+  },
+  updateStats(email, won) {
+    const users = this.getUsers();
+    if (users[email]) {
+      users[email].totalGames = (users[email].totalGames || 0) + 1;
+      if (won) users[email].totalWins = (users[email].totalWins || 0) + 1;
+      this.saveUsers(users);
+    }
   },
   saveProgress(email, collection) {
     const users = this.getUsers();
@@ -754,7 +863,7 @@ function doAuth() {
   let result;
   if (state.authMode === 'register') {
     result = DB.register(email, password);
-    if (result.ok) toast('Регистрация успешна!');
+    if (result.ok) toast('Регистрация успешна! Теперь войдите.');
   } else {
     result = DB.login(email, password);
   }
@@ -767,7 +876,7 @@ function doAuth() {
   document.getElementById('passwordInput').value = '';
   updateAuthScreen();
   updateMenu();
-  toast('Добро пожаловать!');
+  toast('Добро пожаловать, ' + state.user.email + '!');
 }
 
 function logout() {
@@ -1427,18 +1536,27 @@ function exitClimb() {
 // ============ МИНИ-ИГРА 2: MATCH-3 ============
 let matchSelected = null;
 
+const LEVEL_CONFIGS = [
+  { rows: 8, cols: 8, targetScore: 400, moves: 25, items: 4 },
+  { rows: 8, cols: 8, targetScore: 600, moves: 28, items: 5 },
+  { rows: 8, cols: 8, targetScore: 800, moves: 30, items: 6 }
+];
+
 function startMatch3() {
-  state.targetScore = 500 + Math.floor(Math.random() * 501);
+  const levelIdx = Math.min(state.currentLevel - 1, LEVEL_CONFIGS.length - 1);
+  const config = LEVEL_CONFIGS[levelIdx];
+  
+  state.targetScore = config.targetScore + Math.floor(Math.random() * 200);
   showScreen('matchScreen');
   document.getElementById('matchTarget').textContent = state.targetScore;
   
   const board = [];
-  for (let r = 0; r < 16; r++) {
+  for (let r = 0; r < config.rows; r++) {
     board[r] = [];
-    for (let c = 0; c < 16; c++) {
+    for (let c = 0; c < config.cols; c++) {
       let item;
       do {
-        item = Math.floor(Math.random() * 3);
+        item = Math.floor(Math.random() * config.items);
       } while (
         (c >= 2 && board[r][c-1] === item && board[r][c-2] === item) ||
         (r >= 2 && board[r-1][c] === item && board[r-2][c] === item)
@@ -1447,22 +1565,33 @@ function startMatch3() {
     }
   }
   
-  state.matchState = { board, score: 0, moves: 30, busy: false };
+  state.matchState = { 
+    board, 
+    score: 0, 
+    moves: config.moves, 
+    busy: false,
+    rows: config.rows,
+    cols: config.cols
+  };
   matchSelected = null;
   renderMatchBoard();
   updateMatchHUD();
 }
 
 function renderMatchBoard() {
-  const board = state.matchState.board;
+  const s = state.matchState;
+  const board = s.board;
   const container = document.getElementById('matchBoard');
   container.innerHTML = '';
-  for (let r = 0; r < 16; r++) {
-    for (let c = 0; c < 16; c++) {
+  container.style.gridTemplateColumns = `repeat(${s.cols}, 1fr)`;
+  
+  for (let r = 0; r < s.rows; r++) {
+    for (let c = 0; c < s.cols; c++) {
       const cell = document.createElement('div');
-      cell.className = 'cell';
+      cell.className = 'cell new-tile';
       cell.dataset.r = r;
       cell.dataset.c = c;
+      cell.style.animationDelay = `${(r + c) * 0.02}s`;
       const item = board[r][c];
       if (item !== null && item !== undefined) {
         cell.innerHTML = MATCH_ITEMS[item].svg;
@@ -1471,6 +1600,13 @@ function renderMatchBoard() {
       container.appendChild(cell);
     }
   }
+  
+  setTimeout(() => {
+    document.querySelectorAll('.cell.new-tile').forEach(el => {
+      el.classList.remove('new-tile');
+      el.style.animationDelay = '';
+    });
+  }, 500);
 }
 
 function onCellClick(r, c) {
@@ -1523,23 +1659,26 @@ function swap(r1, c1, r2, c2) {
 }
 
 function findMatches() {
-  const b = state.matchState.board;
+  const s = state.matchState;
+  const b = s.board;
+  const rows = s.rows;
+  const cols = s.cols;
   const matched = new Set();
   
-  for (let r = 0; r < 16; r++) {
+  for (let r = 0; r < rows; r++) {
     let run = 1;
-    for (let c = 1; c <= 16; c++) {
-      if (c < 16 && b[r][c] !== null && b[r][c] === b[r][c-1]) run++;
+    for (let c = 1; c <= cols; c++) {
+      if (c < cols && b[r][c] !== null && b[r][c] === b[r][c-1]) run++;
       else {
         if (run >= 3) for (let k = 1; k <= run; k++) matched.add(`${r},${c-k}`);
         run = 1;
       }
     }
   }
-  for (let c = 0; c < 16; c++) {
+  for (let c = 0; c < cols; c++) {
     let run = 1;
-    for (let r = 1; r <= 16; r++) {
-      if (r < 16 && b[r][c] !== null && b[r][c] === b[r-1][c]) run++;
+    for (let r = 1; r <= rows; r++) {
+      if (r < rows && b[r][c] !== null && b[r][c] === b[r-1][c]) run++;
       else {
         if (run >= 3) for (let k = 1; k <= run; k++) matched.add(`${r-k},${c}`);
         run = 1;
@@ -1552,11 +1691,13 @@ function findMatches() {
 function processMatches(matches) {
   const s = state.matchState;
   const b = s.board;
+  const rows = s.rows;
+  const cols = s.cols;
   const lineScores = calculateLineScores();
   s.score += lineScores;
   
   matches.forEach(([r, c]) => {
-    const idx = r * 16 + c;
+    const idx = r * cols + c;
     const cell = document.getElementById('matchBoard').children[idx];
     if (cell) cell.classList.add('matched');
   });
@@ -1577,15 +1718,18 @@ function processMatches(matches) {
 }
 
 function calculateLineScores() {
-  const b = state.matchState.board;
+  const s = state.matchState;
+  const b = s.board;
+  const rows = s.rows;
+  const cols = s.cols;
   let score = 0;
   
-  for (let r = 0; r < 16; r++) {
+  for (let r = 0; r < rows; r++) {
     let c = 0;
-    while (c < 16) {
+    while (c < cols) {
       if (b[r][c] === null) { c++; continue; }
       let len = 1;
-      while (c + len < 16 && b[r][c + len] === b[r][c]) len++;
+      while (c + len < cols && b[r][c + len] === b[r][c]) len++;
       if (len >= 3) {
         if (len === 3) score += 10;
         else if (len === 4) score += 25;
@@ -1594,12 +1738,12 @@ function calculateLineScores() {
       c += len;
     }
   }
-  for (let c = 0; c < 16; c++) {
+  for (let c = 0; c < cols; c++) {
     let r = 0;
-    while (r < 16) {
+    while (r < rows) {
       if (b[r][c] === null) { r++; continue; }
       let len = 1;
-      while (r + len < 16 && b[r + len][c] === b[r][c]) len++;
+      while (r + len < rows && b[r + len][c] === b[r][c]) len++;
       if (len >= 3) {
         if (len === 3) score += 10;
         else if (len === 4) score += 25;
@@ -1612,10 +1756,13 @@ function calculateLineScores() {
 }
 
 function dropTiles() {
-  const b = state.matchState.board;
-  for (let c = 0; c < 16; c++) {
-    let writeRow = 15;
-    for (let r = 15; r >= 0; r--) {
+  const s = state.matchState;
+  const b = s.board;
+  const rows = s.rows;
+  const cols = s.cols;
+  for (let c = 0; c < cols; c++) {
+    let writeRow = rows - 1;
+    for (let r = rows - 1; r >= 0; r--) {
       if (b[r][c] !== null) {
         b[writeRow][c] = b[r][c];
         if (writeRow !== r) b[r][c] = null;
@@ -1626,10 +1773,14 @@ function dropTiles() {
 }
 
 function fillEmpty() {
-  const b = state.matchState.board;
-  for (let r = 0; r < 16; r++) {
-    for (let c = 0; c < 16; c++) {
-      if (b[r][c] === null) b[r][c] = Math.floor(Math.random() * 3);
+  const s = state.matchState;
+  const b = s.board;
+  const rows = s.rows;
+  const cols = s.cols;
+  const numItems = LEVEL_CONFIGS[s.rows === 8 ? Math.min(s.cols, 3) : 3]?.items || 6;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (b[r][c] === null) b[r][c] = Math.floor(Math.random() * numItems);
     }
   }
 }
