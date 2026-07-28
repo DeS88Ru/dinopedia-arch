@@ -1,0 +1,1800 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Археолог: Энциклопедия динозавров</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --sand: #e8c39e;
+    --sand-dark: #c9a074;
+    --jungle: #2d5a3d;
+    --jungle-light: #4a8a5e;
+    --bone: #f5ecd7;
+    --stone: #7a7065;
+    --sky: #87ceeb;
+    --sunset: #ff8c42;
+    --dark: #2a1f14;
+    --beige: #d4b896;
+    --brown: #6b4423;
+  }
+  body {
+    font-family: 'Comic Sans MS', 'Trebuchet MS', sans-serif;
+    background: linear-gradient(180deg, #87ceeb 0%, #e8c39e 60%, #c9a074 100%);
+    min-height: 100vh;
+    color: var(--dark);
+    overflow-x: hidden;
+  }
+  .screen { display: none; min-height: 100vh; padding: 20px; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+  .title {
+    font-size: 2.6em;
+    color: var(--dark);
+    text-shadow: 3px 3px 0 var(--sand), 6px 6px 0 rgba(0,0,0,0.2);
+    margin: 20px 0;
+    text-align: center;
+    letter-spacing: 2px;
+    line-height: 1.2;
+  }
+  .subtitle { font-size: 1.2em; color: var(--jungle); margin-bottom: 20px; text-align: center; max-width: 600px; }
+  .btn {
+    background: linear-gradient(180deg, var(--sunset), #e67320);
+    color: white;
+    border: 3px solid var(--dark);
+    padding: 14px 32px;
+    font-size: 1.15em;
+    font-family: inherit;
+    border-radius: 15px;
+    cursor: pointer;
+    box-shadow: 0 5px 0 var(--dark), 0 8px 15px rgba(0,0,0,0.2);
+    transition: all 0.15s;
+    margin: 8px;
+    min-width: 220px;
+    font-weight: bold;
+  }
+  .btn:hover { transform: translateY(2px); box-shadow: 0 3px 0 var(--dark); }
+  .btn:active { transform: translateY(5px); box-shadow: 0 0 0 var(--dark); }
+  .btn.secondary { background: linear-gradient(180deg, var(--jungle-light), var(--jungle)); }
+  .btn.info { background: linear-gradient(180deg, #6b8cae, #4a6b8a); }
+  .btn.small { padding: 8px 18px; font-size: 1em; min-width: 100px; }
+  .btn.danger { background: linear-gradient(180deg, #d9534f, #a94442); }
+
+  .card {
+    background: var(--bone);
+    border: 3px solid var(--dark);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 8px 0 rgba(0,0,0,0.15);
+    max-width: 500px;
+    width: 100%;
+  }
+  .input-field {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid var(--dark);
+    border-radius: 10px;
+    font-size: 1em;
+    font-family: inherit;
+    margin: 8px 0;
+    background: white;
+  }
+  .input-field:focus { outline: none; border-color: var(--sunset); }
+
+  #menuScreen { justify-content: center; }
+  .hero-char {
+    width: 260px; height: 300px;
+    margin: 10px auto 20px;
+    animation: bob 2s ease-in-out infinite;
+  }
+  @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+  .game-hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 900px;
+    background: var(--bone);
+    border: 3px solid var(--dark);
+    border-radius: 15px;
+    padding: 10px 20px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .hud-item { display: flex; flex-direction: column; align-items: center; }
+  .hud-label { font-size: 0.8em; color: var(--stone); }
+  .hud-value { font-size: 1.4em; font-weight: bold; color: var(--dark); }
+
+  #climbCanvas {
+    background: linear-gradient(180deg, #5a3a1f 0%, #8b5a2b 50%, #a0724a 100%);
+    border: 4px solid var(--dark);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    display: block;
+    max-width: 100%;
+  }
+  .controls-hint {
+    background: rgba(255,255,255,0.9);
+    padding: 10px 18px;
+    border-radius: 10px;
+    margin-top: 10px;
+    font-size: 0.9em;
+    border: 2px solid var(--dark);
+    font-weight: bold;
+  }
+
+  .match3-board {
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+    gap: 2px;
+    background: var(--dark);
+    padding: 4px;
+    border-radius: 10px;
+    border: 4px solid var(--dark);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    max-width: 640px;
+    width: 100%;
+    aspect-ratio: 1;
+  }
+  .cell {
+    background: var(--sand);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.15s, background 0.15s;
+    aspect-ratio: 1;
+    user-select: none;
+    position: relative;
+  }
+  .cell:hover { background: var(--sand-dark); transform: scale(1.05); }
+  .cell.selected { background: #ffeb3b; box-shadow: inset 0 0 0 2px var(--sunset); }
+  .cell.matched { animation: pop 0.4s ease-out forwards; }
+  @keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); background: #fff; }
+    100% { transform: scale(0); opacity: 0; }
+  }
+  .cell svg { width: 80%; height: 80%; }
+
+  .ency-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 15px;
+    width: 100%;
+    max-width: 900px;
+    padding: 20px;
+  }
+  .dino-card {
+    background: var(--bone);
+    border: 3px solid var(--dark);
+    border-radius: 15px;
+    padding: 15px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .dino-card:hover { transform: translateY(-4px); box-shadow: 0 8px 0 rgba(0,0,0,0.15); }
+  .dino-card.locked { filter: grayscale(1); opacity: 0.4; cursor: not-allowed; }
+  .dino-card.locked:hover { transform: none; box-shadow: none; }
+  .dino-icon { width: 80px; height: 80px; margin: 0 auto 8px; }
+  .dino-name { font-size: 0.95em; font-weight: bold; color: var(--dark); }
+  .stars { margin-top: 6px; font-size: 1.2em; letter-spacing: 2px; }
+  .star { color: #ccc; }
+  .star.active { color: #ffc107; text-shadow: 0 0 5px rgba(255,193,7,0.5); }
+
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: var(--bone);
+    border: 4px solid var(--dark);
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+  }
+  .modal-close {
+    position: absolute;
+    top: 10px; right: 15px;
+    background: none;
+    border: none;
+    font-size: 1.8em;
+    cursor: pointer;
+    color: var(--dark);
+  }
+  .modal h2 { color: var(--jungle); margin-bottom: 15px; }
+  .modal .dino-icon { width: 150px; height: 150px; margin: 0 auto 15px; display: block; }
+  .modal p { margin: 10px 0; line-height: 1.5; }
+  .modal .fact {
+    background: #fff3cd;
+    border-left: 4px solid var(--sunset);
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    font-style: italic;
+  }
+
+  .toast {
+    position: fixed;
+    top: 20px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--jungle);
+    color: white;
+    padding: 12px 25px;
+    border-radius: 10px;
+    border: 3px solid var(--dark);
+    z-index: 200;
+    animation: slideDown 0.3s, slideUp 0.3s 2.7s forwards;
+    font-weight: bold;
+  }
+  @keyframes slideDown { from { top: -100px; } to { top: 20px; } }
+  @keyframes slideUp { to { top: -100px; opacity: 0; } }
+
+  .back-btn {
+    position: absolute;
+    top: 20px; left: 20px;
+    background: var(--bone);
+    border: 3px solid var(--dark);
+    border-radius: 10px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: bold;
+    z-index: 10;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 20px;
+    background: var(--sand-dark);
+    border: 2px solid var(--dark);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 10px 0;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--jungle-light), var(--sunset));
+    transition: width 0.3s;
+  }
+
+  .cloud {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    opacity: 0.8;
+    animation: drift 30s linear infinite;
+  }
+  @keyframes drift {
+    from { transform: translateX(-100px); }
+    to { transform: translateX(calc(100vw + 100px)); }
+  }
+
+  .deploy-section {
+    background: var(--bone);
+    border: 3px solid var(--dark);
+    border-radius: 20px;
+    padding: 25px;
+    max-width: 800px;
+    width: 100%;
+    margin: 20px auto;
+    text-align: left;
+  }
+  .deploy-section h3 { color: var(--jungle); margin: 15px 0 10px; font-size: 1.2em; }
+  .deploy-section h4 { color: var(--brown); margin: 10px 0 5px; font-size: 1em; }
+  .deploy-section ol, .deploy-section ul { margin-left: 25px; line-height: 1.7; }
+  .deploy-section li { margin: 5px 0; }
+  .deploy-section code {
+    background: #2a1f14;
+    color: #f5ecd7;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+  }
+  .deploy-section pre {
+    background: #2a1f14;
+    color: #f5ecd7;
+    padding: 12px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 8px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    line-height: 1.5;
+  }
+  .deploy-section .note {
+    background: #fff3cd;
+    border-left: 4px solid var(--sunset);
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin: 10px 0;
+  }
+
+  @media (max-width: 600px) {
+    .title { font-size: 1.8em; }
+    .btn { min-width: 160px; padding: 10px 20px; font-size: 1em; }
+    .match3-board { max-width: 100%; }
+    .hero-char { width: 200px; height: 240px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== ГЛАВНОЕ МЕНЮ ===== -->
+<div id="menuScreen" class="screen active">
+  <div class="cloud" style="top: 40px; left: 10%; width: 80px; height: 30px;"></div>
+  <div class="cloud" style="top: 80px; left: 60%; width: 100px; height: 35px; animation-delay: -15s;"></div>
+  <h1 class="title">🦴 Археолог:<br>Энциклопедия динозавров</h1>
+  <p class="subtitle">Помоги юному археологу найти останки древних гигантов и собери полную коллекцию!</p>
+  
+  <svg class="hero-char" viewBox="0 0 260 320" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="130" cy="310" rx="60" ry="8" fill="rgba(0,0,0,0.25)"/>
+    <path d="M 95 235 Q 85 260 80 280 Q 78 290 90 292 L 105 290 Q 110 280 108 270 Q 105 255 110 240 Z" fill="#f4c89a" stroke="#2a1f14" stroke-width="2"/>
+    <path d="M 135 235 Q 145 255 155 275 Q 160 285 170 285 L 180 280 Q 180 270 170 265 Q 155 255 145 240 Z" fill="#f4c89a" stroke="#2a1f14" stroke-width="2"/>
+    <ellipse cx="92" cy="295" rx="18" ry="9" fill="#6b4423" stroke="#2a1f14" stroke-width="2"/>
+    <path d="M 75 295 Q 75 285 90 285 Q 105 285 108 295 Q 105 302 92 302 Q 78 302 75 295 Z" fill="#5a3a1f" stroke="#2a1f14" stroke-width="2"/>
+    <ellipse cx="172" cy="287" rx="18" ry="9" fill="#6b4423" stroke="#2a1f14" stroke-width="2"/>
+    <path d="M 155 287 Q 155 277 170 277 Q 185 277 188 287 Q 185 294 172 294 Q 158 294 155 287 Z" fill="#5a3a1f" stroke="#2a1f14" stroke-width="2"/>
+    <line x1="85" y1="290" x2="100" y2="290" stroke="#2a1f14" stroke-width="1.5"/>
+    <line x1="165" y1="282" x2="180" y2="282" stroke="#2a1f14" stroke-width="1.5"/>
+    <rect x="85" y="278" width="18" height="8" fill="#f5ecd7" stroke="#2a1f14" stroke-width="1.5"/>
+    <rect x="160" y="270" width="18" height="8" fill="#f5ecd7" stroke="#2a1f14" stroke-width="1.5"/>
+    <path d="M 85 200 L 145 200 L 150 240 L 115 245 L 110 225 L 100 245 L 80 240 Z" fill="#8b6f47" stroke="#2a1f14" stroke-width="2"/>
+    <path d="M 110 225 L 115 245" stroke="#2a1f14" stroke-width="1.5"/>
+    <rect x="82" y="195" width="68" height="10" fill="#5a3a1f" stroke="#2a1f14" stroke-width="2"/>
+    <rect x="110" y="195" width="12" height="10" fill="#c9a227" stroke="#2a1f14" stroke-width="1.5"/>
+    <path d="M 80 130 L 150 130 L 155 200 L 75 200 Z" fill="#d4b896" stroke="#2a1f14" stroke-width="2"/>
+    <path d="M 105 130 L 115 145 L 125 130 Z" fill="#c9a074" stroke="#2a1f14" stroke-width="1.5"/>
+    <circle cx="115" cy="150" r="2" fill="#5a3a1f"/>
+    <circle cx="115" cy="170" r="2" fill="#5a3a1f"/>
+    <circle cx="115" cy="190" r="2" fill="#5a3a1f"/>
+    <rect x="88" y="155" width="18" height="20" rx="2" fill="#c9a074" stroke="#2a1f14" stroke-width="1.5"/>
+    <line x1="88" y1="160" x2="106" y2="160" stroke="#2a1f14" stroke-width="1"/>
+    <circle cx="97" cy="165" r="1.5" fill="#5a3a1f"/>
+    <rect x="124" y="155" width="18" height="20" rx="2" fill="#c9a074" stroke="#2a1f14" stroke-width="1.5"/>
+    <line x1="124" y1="160" x2="142" y2="160" stroke="#2a1f14" stroke-width="1"/>
+    <circle cx="133" cy="165" r="1.5" fill="#5a3a1f"/>
+    <path d="M 78 135 Q 60 155 55 175 Q 53 185 60 188 Q 68 188 70 180 Q 72 165 82 150 Z" fill="#f4c89a" stroke="#2a1f14" stroke-width="2"/>
+    <path d="M 152 135 Q 175 145 190 160 Q 198 168 195 178 Q 188 185 180 180 Q 170 170 155 155 Z" fill="#f4c89a" stroke="#2a1f14" stroke-width="2"/>
+    <circle cx="190" cy="175" r="9" fill="#f4c89a" stroke="#2a1f14" stroke-width="2"/>
+    <rect x="188" y="175" width="4" height="25" fill="#6b4423" stroke="#2a1f14" stroke-width="1.5" transform="rotate(-20 190 187)"/>
+    <circle cx="205" cy="160" r="18" fill="#87ceeb" stroke="#c9a227" stroke-width="4" opacity="0.9"/>
+    <circle cx="205" cy="160" r="14" fill="#b0d4e8" opacity="0.5"/>
+    <path d="M 195 150 Q 205 145 215 152" stroke="white" stroke-width="2" fill="none" opacity="0.7"/>
+    <path d="M 95 130 L 140 195" stroke="#5a3a1f" stroke-width="5" stroke-linecap="round"/>
+    <rect x="115" y="180" width="35" height="28" rx="4" fill="#8b5a2b" stroke="#2a1f14" stroke-width="2"/>
+    <rect x="115" y="180" width="35" height="8" fill="#6b4423" stroke="#2a1f14" stroke-width="1.5"/>
+    <rect x="128" y="192" width="10" height="8" rx="2" fill="#c9a227" stroke="#2a1f14" stroke-width="1"/>
+    <line x1="118" y1="195" x2="147" y2="195" stroke="#5a3a1f" stroke-width="1"/>
+    <circle cx="115" cy="100" r="38" fill="#f4c89a" stroke="#2a1f14" stroke-width="2"/>
+    <circle cx="78" cy="105" r="7" fill="#f4c89a" stroke="#2a1f14" stroke-width="2"/>
+    <circle cx="78" cy="105" r="3" fill="#e8a87c"/>
+    <circle cx="152" cy="105" r="7" fill="#f4c89a" stroke="#2a1f14" stroke-width="2"/>
+    <circle cx="152" cy="105" r="3" fill="#e8a87c"/>
+    <path d="M 80 90 Q 75 75 85 70 Q 95 65 100 75 Q 105 65 115 65 Q 125 65 130 75 Q 135 65 145 70 Q 155 75 150 90" fill="#6b4423" stroke="#2a1f14" stroke-width="1.5"/>
+    <path d="M 85 85 Q 82 78 88 75" stroke="#5a3a1f" stroke-width="1.5" fill="none"/>
+    <path d="M 145 85 Q 148 78 142 75" stroke="#5a3a1f" stroke-width="1.5" fill="none"/>
+    <ellipse cx="115" cy="72" rx="50" ry="12" fill="#c9a074" stroke="#2a1f14" stroke-width="2"/>
+    <path d="M 70 72 Q 70 40 115 35 Q 160 40 160 72 Z" fill="#d4b896" stroke="#2a1f14" stroke-width="2"/>
+    <ellipse cx="115" cy="68" rx="48" ry="10" fill="#e8c39e" stroke="#2a1f14" stroke-width="1.5"/>
+    <path d="M 70 72 Q 115 78 160 72" stroke="#5a3a1f" stroke-width="4" fill="none"/>
+    <circle cx="95" cy="55" r="2.5" fill="#8b6f47"/>
+    <circle cx="115" cy="50" r="2.5" fill="#8b6f47"/>
+    <circle cx="135" cy="55" r="2.5" fill="#8b6f47"/>
+    <circle cx="85" cy="65" r="2" fill="#8b6f47"/>
+    <circle cx="105" cy="62" r="2" fill="#8b6f47"/>
+    <circle cx="125" cy="62" r="2" fill="#8b6f47"/>
+    <circle cx="145" cy="65" r="2" fill="#8b6f47"/>
+    <circle cx="115" cy="38" r="4" fill="#8b6f47" stroke="#2a1f14" stroke-width="1"/>
+    <ellipse cx="100" cy="100" rx="8" ry="10" fill="white" stroke="#2a1f14" stroke-width="1.5"/>
+    <ellipse cx="130" cy="100" rx="8" ry="10" fill="white" stroke="#2a1f14" stroke-width="1.5"/>
+    <circle cx="102" cy="102" r="5" fill="#6b4423"/>
+    <circle cx="132" cy="102" r="5" fill="#6b4423"/>
+    <circle cx="103" cy="100" r="2" fill="white"/>
+    <circle cx="133" cy="100" r="2" fill="white"/>
+    <circle cx="100" cy="103" r="1" fill="white"/>
+    <circle cx="130" cy="103" r="1" fill="white"/>
+    <path d="M 92 88 Q 100 85 108 88" stroke="#5a3a1f" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M 122 88 Q 130 85 138 88" stroke="#5a3a1f" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M 115 105 Q 112 112 115 116 Q 118 112 115 105" fill="#e8a87c" stroke="#2a1f14" stroke-width="1"/>
+    <path d="M 100 120 Q 115 132 130 120" stroke="#2a1f14" stroke-width="2" fill="#c94040" stroke-linecap="round"/>
+    <path d="M 105 122 Q 115 128 125 122" fill="white"/>
+    <circle cx="90" cy="112" r="5" fill="#ffb3b3" opacity="0.5"/>
+    <circle cx="140" cy="112" r="5" fill="#ffb3b3" opacity="0.5"/>
+    <circle cx="95" cy="108" r="1" fill="#8b6f47" opacity="0.6"/>
+    <circle cx="100" cy="110" r="1" fill="#8b6f47" opacity="0.6"/>
+    <circle cx="130" cy="110" r="1" fill="#8b6f47" opacity="0.6"/>
+    <circle cx="135" cy="108" r="1" fill="#8b6f47" opacity="0.6"/>
+  </svg>
+  
+  <div id="userInfo" style="margin-bottom: 15px; font-weight: bold; color: var(--jungle);"></div>
+  <button class="btn" onclick="startGame()">🎮 Начать игру</button>
+  <button class="btn secondary" onclick="showScreen('encyclopediaScreen')"> Энциклопедия</button>
+  <button class="btn info" onclick="showScreen('deployScreen')">📋 Инструкция по деплою</button>
+  <button class="btn secondary" onclick="showAuth()">👤 Профиль</button>
+</div>
+
+<!-- ===== АВТОРИЗАЦИЯ ===== -->
+<div id="authScreen" class="screen">
+  <button class="back-btn" onclick="showScreen('menuScreen')">← Назад</button>
+  <h1 class="title" style="font-size: 2em;">👤 Профиль</h1>
+  <div class="card">
+    <div id="authForm">
+      <h3 style="margin-bottom: 15px; color: var(--jungle);" id="authTitle">Вход в игру</h3>
+      <input type="email" class="input-field" id="emailInput" placeholder="Email">
+      <input type="password" class="input-field" id="passwordInput" placeholder="Пароль">
+      <button class="btn" onclick="doAuth()" style="width: 100%;">Войти</button>
+      <button class="btn secondary" onclick="toggleAuthMode()" id="toggleAuthBtn" style="width: 100%;">Зарегистрироваться</button>
+    </div>
+    <div id="loggedForm" style="display: none; text-align: center;">
+      <h3 style="color: var(--jungle);" id="loggedEmail"></h3>
+      <p style="margin: 15px 0;">Найдено костей: <b id="statBones">0</b></p>
+      <p>Видов динозавров: <b id="statSpecies">0</b> / 10</p>
+      <button class="btn danger" onclick="logout()" style="width: 100%;">Выйти</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ВЫБОР УРОВНЯ ===== -->
+<div id="levelScreen" class="screen">
+  <button class="back-btn" onclick="showScreen('menuScreen')">← Меню</button>
+  <h1 class="title" style="font-size: 2em;">⛰️ Выбери экспедицию</h1>
+  <p class="subtitle">Доберись до вершины, избегая булыжников!</p>
+  <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+    <button class="btn" onclick="startClimb(1)">🏜️ Пустыня<br><small>Легко</small></button>
+    <button class="btn secondary" onclick="startClimb(2)">🌋 Вулкан<br><small>Средне</small></button>
+    <button class="btn" style="background: linear-gradient(180deg, #8b5cf6, #6d28d9);" onclick="startClimb(3)">🏔️ Горы<br><small>Сложно</small></button>
+  </div>
+</div>
+
+<!-- ===== МИНИ-ИГРА 1: ПЛАТФОРМЕР ===== -->
+<div id="climbScreen" class="screen">
+  <button class="back-btn" onclick="exitClimb()">← Выход</button>
+  <div class="game-hud">
+    <div class="hud-item"><span class="hud-label">Уровень</span><span class="hud-value" id="climbLevel">1</span></div>
+    <div class="hud-item"><span class="hud-label">Высота</span><span class="hud-value" id="climbHeight">0%</span></div>
+    <div class="hud-item"><span class="hud-label">Жизни</span><span class="hud-value" id="climbLives">❤❤❤</span></div>
+  </div>
+  <canvas id="climbCanvas" width="600" height="500"></canvas>
+  <div class="controls-hint">⌨️ ← → движение, ↑ — подняться по лестнице, ↓ — спуститься. На мобильном — свайпы.</div>
+</div>
+
+<!-- ===== МИНИ-ИГРА 2: MATCH-3 ===== -->
+<div id="matchScreen" class="screen">
+  <button class="back-btn" onclick="exitMatch()">← Выход</button>
+  <div class="game-hud">
+    <div class="hud-item"><span class="hud-label">Очки</span><span class="hud-value" id="matchScore">0</span></div>
+    <div class="hud-item"><span class="hud-label">Цель</span><span class="hud-value" id="matchTarget">500</span></div>
+    <div class="hud-item"><span class="hud-label">Ходы</span><span class="hud-value" id="matchMoves">30</span></div>
+  </div>
+  <div class="progress-bar" style="max-width: 640px; width: 100%;">
+    <div class="progress-fill" id="matchProgress" style="width: 0%;"></div>
+  </div>
+  <div class="match3-board" id="matchBoard"></div>
+  <p style="margin-top: 10px; font-size: 0.9em; color: var(--jungle);">Собирай кости в ряд! </p>
+</div>
+
+<!-- ===== ЭНЦИКЛОПЕДИЯ ===== -->
+<div id="encyclopediaScreen" class="screen">
+  <button class="back-btn" onclick="showScreen('menuScreen')">← Меню</button>
+  <h1 class="title" style="font-size: 2em;">📖 Энциклопедия динозавров</h1>
+  <p class="subtitle">Твоя коллекция древних находок</p>
+  <div class="ency-grid" id="encyGrid"></div>
+</div>
+
+<!-- ===== ИНСТРУКЦИЯ ПО ДЕПЛОЮ ===== -->
+<div id="deployScreen" class="screen">
+  <button class="back-btn" onclick="showScreen('menuScreen')">← Меню</button>
+  <h1 class="title" style="font-size: 2em;"> Инструкция по деплою</h1>
+  <p class="subtitle">Как выложить игру на GitHub и хостинг</p>
+  <div class="deploy-section">
+    <h3>🚀 Часть 1: Подготовка проекта</h3>
+    <ol>
+      <li>Создай папку <code>dino-archaeologist</code></li>
+      <li>Сохрани этот HTML как <code>index.html</code> в корне папки</li>
+      <li>Создай <code>README.md</code> с описанием проекта</li>
+      <li>Создай <code>.gitignore</code>:
+<pre>.DS_Store
+node_modules/
+.env
+*.log</pre>
+      </li>
+    </ol>
+    <h3>📦 Часть 2: Репозиторий GitHub</h3>
+    <ol>
+      <li>Зайди на <a href="https://github.com" target="_blank">github.com</a></li>
+      <li>Нажми <b>"New repository"</b></li>
+      <li>Имя: <code>dino-archaeologist</code>, выбери <b>Public</b></li>
+      <li>Поставь галочку <b>"Add a README file"</b></li>
+    </ol>
+    <h3>💻 Часть 3: Загрузка кода</h3>
+    <h4>Вариант A — Git CLI:</h4>
+<pre>cd dino-archaeologist
+git init
+git add .
+git commit -m "Initial commit"
+git remote add origin https://github.com/НИК/dino-archaeologist.git
+git branch -M main
+git push -u origin main</pre>
+    <h4>Вариант B — GitHub Desktop:</h4>
+    <ol>
+      <li>Скачай <a href="https://desktop.github.com" target="_blank">GitHub Desktop</a></li>
+      <li>File → Add Local Repository → выбери папку</li>
+      <li>Publish repository</li>
+    </ol>
+    <h3> Часть 4: GitHub Pages (бесплатно)</h3>
+    <ol>
+      <li>В репозитории → <b>Settings</b> → <b>Pages</b></li>
+      <li>Source: <b>Deploy from a branch</b></li>
+      <li>Branch: <b>main</b> / <b>/root</b></li>
+      <li>Нажми <b>Save</b>, подожди 1-3 минуты</li>
+      <li>Сайт: <code>https://НИК.github.io/dino-archaeologist/</code></li>
+    </ol>
+    <h3>🏠 Часть 5: Хостинг (прод)</h3>
+    <h4>Netlify (рекомендуется):</h4>
+    <ol>
+      <li><a href="https://www.netlify.com" target="_blank">netlify.com</a> → Add new site → Import Git</li>
+      <li>Выбери GitHub репозиторий</li>
+      <li>Build command: пусто, Publish dir: <code>/</code></li>
+    </ol>
+    <h4>Vercel:</h4>
+    <ol>
+      <li><a href="https://vercel.com" target="_blank">vercel.com</a> → Import Git Repository</li>
+      <li>Framework: <b>Other</b> → Deploy</li>
+    </ol>
+    <h4>Классический хостинг (Beget, Timeweb):</h4>
+    <ol>
+      <li>Загрузи <code>index.html</code> в <code>public_html</code> через FTP/FileZilla</li>
+    </ol>
+    <h3>✅ Чек-лист</h3>
+    <ul>
+      <li>☐ Игра запускается локально</li>
+      <li>☐ Все функции работают</li>
+      <li>☐ Протестировано в Chrome, Firefox, Safari</li>
+      <li>☐ Адаптивность на мобильном</li>
+      <li>☐ README.md с описанием</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===== МОДАЛКА ДИНОЗАВРА ===== -->
+<div class="modal-overlay" id="dinoModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<!-- ===== МОДАЛКА РЕЗУЛЬТАТА ===== -->
+<div class="modal-overlay" id="resultModal">
+  <div class="modal" style="text-align: center;">
+    <h2 id="resultTitle"> Победа!</h2>
+    <div id="resultContent"></div>
+    <button class="btn" onclick="closeResult()">Продолжить</button>
+  </div>
+</div>
+
+<script>
+// ============ ДАННЫЕ ДИНОЗАВРОВ ============
+const DINOS = [
+  { id: 'trex', name: 'Тираннозавр', color: '#5a7a3a',
+    fact: 'Один из самых крупных хищников — до 12 метров в длину!',
+    short: 'Тираннозавр рекс — король динозавров. Жил 68 млн лет назад. Крошечные ручки, но огромные зубы!',
+    full: 'Тираннозавр рекс достигал 12 метров в длину и весил до 9 тонн. Зубы длиной до 30 см могли дробить кости.',
+    funFact: 'Тираннозавр мог развивать скорость до 30 км/ч!' },
+  { id: 'triceratops', name: 'Трицератопс', color: '#8b6f47',
+    fact: 'У него было три рога и большой костный воротник!',
+    short: 'Травоядный динозавр с тремя рогами и костяным щитом. Жил 68 млн лет назад.',
+    full: 'Длина 9 метров, вес 10 тонн. Три рога и воротник защищали от хищников.',
+    funFact: 'Воротник мог менять цвет для привлечения друзей!' },
+  { id: 'stego', name: 'Стегозавр', color: '#c97b4a',
+    fact: 'Его мозг был размером с грецкий орех!',
+    short: 'Динозавр с костяными пластинами на спине и шипами на хвосте.',
+    full: 'Жил 155 млн лет назад. Пластины регулировали температуру тела. Мозг весил всего 80 граммов!',
+    funFact: 'Шипы на хвосте могли пробить кость тираннозавра!' },
+  { id: 'brachio', name: 'Брахиозавр', color: '#6b8e9e',
+    fact: 'Один из самых высоких динозавров — до 16 метров!',
+    short: 'Гигантский длинношеий динозавр, достигавший высоты жирафа.',
+    full: 'Длина 26 метров, высота до 16 метров. Питался листьями высоких деревьев. 400 кг пищи в день!',
+    funFact: 'Сердце весило около 400 кг!' },
+  { id: 'ptero', name: 'Птеранодон', color: '#9b7bb8',
+    fact: 'Размах крыльев — до 7 метров!',
+    short: 'Летающая рептилия с большим гребнем на голове.',
+    full: 'Размах крыльев 7 метров, вес всего 25 кг благодаря полым костям. Питался рыбой.',
+    funFact: 'Название означает «крыло без зуба»!' },
+  { id: 'veloci', name: 'Велоцираптор', color: '#b85c3a',
+    fact: 'Был размером с индейку, но очень умный!',
+    short: 'Маленький, но быстрый и умный хищник с острыми когтями.',
+    full: 'Длина 2 метра, вес 20 кг. Покрыт перьями. Охотился стаями.',
+    funFact: 'Найдена окаменелость велоцираптора в схватке с протоцератопсом!' },
+  { id: 'ankylo', name: 'Анкилозавр', color: '#7a8b5a',
+    fact: 'Его хвост заканчивался костяной булавой!',
+    short: 'Бронированный динозавр с булавой на хвосте.',
+    full: 'Длина 8 метров, вес 8 тонн. Всё тело покрыто костяными пластинами, даже веки!',
+    funFact: 'Булава могла сломать кости тираннозавру!' },
+  { id: 'spino', name: 'Спинозавр', color: '#4a6b8a',
+    fact: 'Самый крупный хищный динозавр!',
+    short: 'Гигантский хищник с парусом на спине, любил рыбу.',
+    full: 'Длина 15-18 метров! Парус высотой 2 метра. Полуводный хищник.',
+    funFact: 'Единственный динозавр, приспособленный к жизни в воде!' },
+  { id: 'para', name: 'Паразавролоф', color: '#d4a574',
+    fact: 'Его гребень издавал звуки как тромбон!',
+    short: 'Динозавр с длинным трубчатым гребнем на голове.',
+    full: 'Травоядный, длина 10 метров. Гребень длиной 1,8 метра служил резонатором.',
+    funFact: 'Учёные смогли «услышать», как он звучал!' },
+  { id: 'diplo', name: 'Диплодок', color: '#a89070',
+    fact: 'Его хвост работал как кнут!',
+    short: 'Длинношеий и длиннохвостый гигант.',
+    full: 'Длина до 27 метров! Вес 15 тонн. Хвост мог щёлкать со скоростью звука.',
+    funFact: 'Съедал 200 кг растений каждый день!' }
+];
+
+function dinoSVG(dino, size=80) {
+  const c = dino.color;
+  const icons = {
+    trex: `<svg viewBox="0 0 100 100" width="${size}" height="${size}"><path d="M20 70 Q20 40 45 35 L70 30 Q85 30 85 45 L85 55 Q85 65 75 65 L60 65 L60 75 L50 75 L50 65 L40 65 L40 75 L30 75 L30 65 Q20 65 20 70 Z" fill="${c}" stroke="#2a1f14" stroke-width="2"/><circle cx="75" cy="42" r="3" fill="#fff"/><circle cx="76" cy="42" r="2" fill="#2a1f14"/></svg>`,
+    triceratops: `<svg viewBox="0 0 100 100" width="${size}" height="${size}"><ellipse cx="50" cy="55" rx="35" ry="20" fill="${c}" stroke="#2a1f14" stroke-width="2"/><circle cx="75" cy="45" r="18" fill="${c}" stroke="#2a1f14" stroke-width="2"/><path d="M65 30 L60 15 L68 28 Z" fill="${c}" stroke="#2a1f14" stroke-width="2"/><path d="M85 30 L95 15 L88 28 Z" fill="${c}" stroke="#2a1f14" stroke-width="2"/></svg>`,
+    stego: `<svg viewBox="0 0 100 100" width="${size}" height="${size}"><ellipse cx="50" cy="60" rx="35" ry="15" fill="${c}" stroke="#2a1f14" stroke-width="2"/><path d="M25 50 L20 30 L30 45 Z" fill="#d47b4a" stroke="#2a1f14" stroke-width="2"/><path d="M40 48 L35 25 L45 42 Z" fill="#d47b4a" stroke="#2a1f14" stroke-width="2"/><path d="M55 48 L55 25 L60 42 Z" fill="#d47b4a" stroke="#2a1f14" stroke-width="2"/><path d="M70 50 L75 30 L78 45 Z" fill="#d47b4a" stroke="#2a1f14" stroke-width="2"/><circle cx="80" cy="55" r="8" fill="${c}" stroke="#2a1f14" stroke-width="2"/></svg>`,
+    brachio: `<svg viewBox="0 0 100 100" width="${size}" height="${size}"><ellipse cx="40" cy="70" rx="30" ry="15" fill="${c}" stroke="#2a1f14" stroke-width="2"/><path d="M55 65 Q60 30 75 20 Q85 18 85 28 Q85 35 78 38 L70 55 L65 65 Z" fill="${c}" stroke="#2a1f14" stroke-width="2"/><circle cx="80" cy="25" r="2" fill="#2a1f14"/></svg>`,
+    ptero: `<svg viewBox="0 0 100 100" width="${size}" height="${size}"><path d="M50 50 L10 35 L20 50 L10 65 L50 55 Z" fill="${c}" stroke="#2a1f14" stroke-width="2"/><path d="M50 50 L90 35 L80 50 L90 65 L50 55 Z" fill="${c}" stroke="#2a1f14" stroke-width="2"/><ellipse cx="50" cy="50" rx="10" ry="7" fill="${c}" stroke="#2a1f14" stroke-width="2"/></svg>`,
+    veloci: `<svg viewBox="0 0 100 100" width="${size}" height="${size}"><path d="M25 65 Q25 45 45 40 L65 35 Q80 35 80 48 L80 55 Q80 62 72 62 L65 62 L65 75 L58 75 L58 62 L45 62 L45 75 L38 75 L38 62 Q25 62 25 65 Z" fill="${c}" stroke="#2a1f14" stroke-width="2"/><circle cx="72" cy="42" r="2" fill="#fff"/></svg>`,
+    ankylo: `<svg viewBox="0 0 100 100" width="${size}" height="${size}"><ellipse cx="50" cy="55" rx="35" ry="18" fill="${c}" stroke="#2a1f14" stroke-width="2"/><circle cx="30" cy="48" r="5" fill="#5a6b3a" stroke="#2a1f14" stroke-width="1.5"/><circle cx="45" cy="45" r="5" fill="#5a6b3a" stroke="#2a1f14" stroke-width="1.5"/><circle cx="60" cy="45" r="5" fill="#5a6b3a" stroke="#2a1f14" stroke-width="1.5"/><circle cx="85" cy="55" r="10" fill="${c}" stroke="#2a1f14" stroke-width="2"/></svg>`,
+    spino: `<svg viewBox="0 0 100 100" width="${size}" height="${size}"><path d="M20 65 Q20 45 45 40 L75 35 Q88 35 88 48 L88 55 Q88 62 80 62 L70 62 L70 75 L62 75 L62 62 L45 62 L45 75 L37 75 L37 62 Q20 62 20 65 Z" fill="${c}" stroke="#2a1f14" stroke-width="2"/><path d="M30 40 L35 15 L40 40 L45 18 L50 40 L55 20 L60 40 L65 22 L70 40" stroke="#2a1f14" stroke-width="1.5" fill="#6b8baa" opacity="0.8"/></svg>`,
+    para: `<svg viewBox="0 0 100 100" width="${size}" height="${size}"><ellipse cx="45" cy="60" rx="30" ry="18" fill="${c}" stroke="#2a1f14" stroke-width="2"/><path d="M60 55 Q70 45 78 40 Q85 38 85 45 Q85 52 78 55 L70 60 Z" fill="${c}" stroke="#2a1f14" stroke-width="2"/><path d="M78 40 Q85 25 95 20 Q92 35 85 40" fill="${c}" stroke="#2a1f14" stroke-width="2"/></svg>`,
+    diplo: `<svg viewBox="0 0 100 100" width="${size}" height="${size}"><ellipse cx="35" cy="65" rx="28" ry="13" fill="${c}" stroke="#2a1f14" stroke-width="2"/><path d="M55 60 Q60 30 75 20 Q82 18 82 25 Q82 32 76 34 L68 50 L62 60 Z" fill="${c}" stroke="#2a1f14" stroke-width="2"/><path d="M15 65 Q5 68 2 75 Q10 72 15 70 Z" fill="${c}" stroke="#2a1f14" stroke-width="2"/></svg>`
+  };
+  return icons[dino.id] || '';
+}
+
+const MATCH_ITEMS = [
+  { id: 'stone', name: 'Камень', svg: `<svg viewBox="0 0 40 40"><ellipse cx="20" cy="22" rx="14" ry="10" fill="#8a8078" stroke="#2a1f14" stroke-width="2"/></svg>` },
+  { id: 'bone', name: 'Кость', svg: `<svg viewBox="0 0 40 40"><path d="M8 15 Q5 12 8 9 Q11 7 14 10 L26 22 Q29 19 32 22 Q35 25 32 28 Q29 31 26 28 L14 16 Q11 19 8 18 Q5 17 8 15 Z" fill="#f5ecd7" stroke="#2a1f14" stroke-width="2"/></svg>` },
+  { id: 'brush', name: 'Кисточка', svg: `<svg viewBox="0 0 40 40"><rect x="18" y="5" width="4" height="18" fill="#8b5a2b" stroke="#2a1f14" stroke-width="1.5"/><path d="M14 23 L26 23 L24 35 L16 35 Z" fill="#d4a574" stroke="#2a1f14" stroke-width="1.5"/></svg>` }
+];
+
+// ============ СОСТОЯНИЕ ============
+let state = {
+  user: null,
+  authMode: 'login',
+  collection: {},
+  currentLevel: 1,
+  climbState: null,
+  matchState: null,
+  targetScore: 500
+};
+
+const DB = {
+  getUsers() { return JSON.parse(localStorage.getItem('dino_users') || '{}'); },
+  saveUsers(u) { localStorage.setItem('dino_users', JSON.stringify(u)); },
+  getUser(email) { return this.getUsers()[email]; },
+  register(email, password) {
+    const users = this.getUsers();
+    if (users[email]) return { error: 'Пользователь уже существует' };
+    users[email] = { email, password, collection: {}, createdAt: Date.now() };
+    this.saveUsers(users);
+    return { ok: true };
+  },
+  login(email, password) {
+    const u = this.getUser(email);
+    if (!u) return { error: 'Пользователь не найден' };
+    if (u.password !== password) return { error: 'Неверный пароль' };
+    return { ok: true, user: u };
+  },
+  saveProgress(email, collection) {
+    const users = this.getUsers();
+    if (users[email]) {
+      users[email].collection = collection;
+      this.saveUsers(users);
+    }
+  }
+};
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'menuScreen') updateMenu();
+  if (id === 'encyclopediaScreen') renderEncyclopedia();
+  if (id === 'authScreen') updateAuthScreen();
+}
+
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+function showAuth() { showScreen('authScreen'); }
+
+function updateAuthScreen() {
+  if (state.user) {
+    document.getElementById('authForm').style.display = 'none';
+    document.getElementById('loggedForm').style.display = 'block';
+    document.getElementById('loggedEmail').textContent = '👤 ' + state.user.email;
+    const total = Object.values(state.user.collection).reduce((a,b)=>a+b, 0);
+    const species = Object.keys(state.user.collection).length;
+    document.getElementById('statBones').textContent = total;
+    document.getElementById('statSpecies').textContent = species;
+  } else {
+    document.getElementById('authForm').style.display = 'block';
+    document.getElementById('loggedForm').style.display = 'none';
+  }
+}
+
+function toggleAuthMode() {
+  state.authMode = state.authMode === 'login' ? 'register' : 'login';
+  document.getElementById('authTitle').textContent = state.authMode === 'login' ? 'Вход в игру' : 'Регистрация';
+  document.getElementById('toggleAuthBtn').textContent = state.authMode === 'login' ? 'Зарегистрироваться' : 'У меня есть аккаунт';
+}
+
+function doAuth() {
+  const email = document.getElementById('emailInput').value.trim();
+  const password = document.getElementById('passwordInput').value;
+  if (!email || !password) { toast('Заполни все поля!'); return; }
+  if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) { toast('Неверный email'); return; }
+  
+  let result;
+  if (state.authMode === 'register') {
+    result = DB.register(email, password);
+    if (result.ok) toast('Регистрация успешна!');
+  } else {
+    result = DB.login(email, password);
+  }
+  
+  if (result.error) { toast(result.error); return; }
+  if (result.user) state.user = result.user;
+  else state.user = DB.getUser(email);
+  
+  document.getElementById('emailInput').value = '';
+  document.getElementById('passwordInput').value = '';
+  updateAuthScreen();
+  updateMenu();
+  toast('Добро пожаловать!');
+}
+
+function logout() {
+  state.user = null;
+  updateAuthScreen();
+  updateMenu();
+  showScreen('menuScreen');
+  toast('Вы вышли из аккаунта');
+}
+
+function updateMenu() {
+  document.getElementById('userInfo').textContent = state.user ? '👤 ' + state.user.email : '';
+}
+
+function startGame() {
+  if (!state.user) { toast('Сначала войди в аккаунт!'); showAuth(); return; }
+  showScreen('levelScreen');
+}
+
+// =====================================================
+// МИНИ-ИГРА 1: ПЛАТФОРМЕР — ИСПРАВЛЕННАЯ ФИЗИКА
+// =====================================================
+const climbCanvas = document.getElementById('climbCanvas');
+const ctx = climbCanvas.getContext('2d');
+let climbAnim = null;
+
+// Константы персонажа
+const PW = 32;  // ширина персонажа
+const PH = 48;  // высота персонажа
+const GRAVITY = 0.6;
+const MAX_FALL_SPEED = 8;
+const MOVE_SPEED = 3.5;
+const LADDER_SPEED = 2.5;
+
+function startClimb(level) {
+  state.currentLevel = level;
+  showScreen('climbScreen');
+  document.getElementById('climbLevel').textContent = level;
+  
+  const W = climbCanvas.width, H = climbCanvas.height;
+  const cols = 12, rows = 15;
+  const cellW = W / cols, cellH = H / rows;
+  
+  // Генерация уровня
+  const grid = [];
+  for (let r = 0; r < rows; r++) {
+    grid[r] = [];
+    for (let c = 0; c < cols; c++) grid[r][c] = 0;
+  }
+  
+  // Платформы (строки 13, 10, 7, 4, 1)
+  const platformRows = [13, 10, 7, 4, 1];
+  platformRows.forEach((r, idx) => {
+    for (let c = 0; c < cols; c++) grid[r][c] = 1;
+    // Лестница между платформами
+    const ladderCol = idx % 2 === 0 ? 2 : cols - 3;
+    for (let rr = r - 3; rr < r; rr++) {
+      if (rr >= 0) grid[rr][ladderCol] = 2;
+    }
+  });
+  // Финиш сверху
+  grid[0][Math.floor(cols/2)-1] = 3;
+  grid[0][Math.floor(cols/2)] = 3;
+  grid[0][Math.floor(cols/2)+1] = 3;
+  
+  // Стартовая позиция: игрок стоит НА платформе row=13
+  const startCol = Math.floor(cols/2);
+  const startX = startCol * cellW + (cellW - PW) / 2;
+  const startY = platformRows[0] * cellH - PH; // стоит на платформе
+  
+  state.climbState = {
+    grid, cols, rows, cellW, cellH,
+    player: {
+      x: startX,
+      y: startY,
+      vy: 0,
+      onLadder: false,
+      onPlatform: true,
+      col: startCol,
+      row: platformRows[0]
+    },
+    boulders: [],
+    lives: 3,
+    level,
+    gameOver: false,
+    won: false,
+    spawnTimer: 0,
+    spawnInterval: 120 - level * 25,
+    platformRows
+  };
+  
+  updateClimbHUD();
+  if (climbAnim) cancelAnimationFrame(climbAnim);
+  climbLoop();
+}
+
+function updateClimbHUD() {
+  const s = state.climbState;
+  if (!s) return;
+  document.getElementById('climbLives').textContent = '❤'.repeat(s.lives) + ''.repeat(Math.max(0, 3 - s.lives));
+  const heightPct = Math.round((1 - s.player.y / (s.rows * s.cellH)) * 100);
+  document.getElementById('climbHeight').textContent = Math.min(100, Math.max(0, heightPct)) + '%';
+}
+
+function climbLoop() {
+  const s = state.climbState;
+  if (!s || s.gameOver || s.won) return;
+  updateClimb();
+  drawClimb();
+  climbAnim = requestAnimationFrame(climbLoop);
+}
+
+// ===== ГЛАВНАЯ ФУНКЦИЯ ФИЗИКИ =====
+function updateClimb() {
+  const s = state.climbState;
+  const p = s.player;
+  const { cols, rows, cellW, cellH, grid } = s;
+  
+  // === 1. Горизонтальное движение ===
+  if (keys.left) p.x -= MOVE_SPEED;
+  if (keys.right) p.x += MOVE_SPEED;
+  
+  // Ограничение по краям
+  if (p.x < 0) p.x = 0;
+  if (p.x > cols * cellW - PW) p.x = cols * cellW - PW;
+  
+  // === 2. Определяем ячейки персонажа ===
+  const centerX = p.x + PW / 2;
+  const feetY = p.y + PH;     // низ персонажа (ноги)
+  const headY = p.y;           // верх персонажа (голова)
+  const midY = p.y + PH / 2;   // центр
+  
+  const col = Math.floor(centerX / cellW);
+  const feetRow = Math.floor((feetY - 1) / cellH); // -1 чтобы не "проваливаться" в следующую строку
+  const headRow = Math.floor(headY / cellH);
+  const midRow = Math.floor(midY / cellH);
+  
+  // === 3. Проверка: стоит ли на платформе ===
+  let standingOnPlatform = false;
+  if (feetRow >= 0 && feetRow < rows && col >= 0 && col < cols) {
+    if (grid[feetRow] && grid[feetRow][col] === 1) {
+      // Проверяем, что ноги действительно касаются платформы
+      const platformTop = feetRow * cellH;
+      if (feetY >= platformTop && feetY <= platformTop + 8) {
+        standingOnPlatform = true;
+      }
+    }
+  }
+  
+  // === 4. Проверка: находится ли на лестнице ===
+  let touchingLadder = false;
+  if (midRow >= 0 && midRow < rows && col >= 0 && col < cols) {
+    if (grid[midRow] && grid[midRow][col] === 2) {
+      touchingLadder = true;
+    }
+  }
+  // Также проверяем ноги — если они на лестнице
+  if (!touchingLadder && feetRow >= 0 && feetRow < rows && col >= 0 && col < cols) {
+    if (grid[feetRow] && grid[feetRow][col] === 2) {
+      touchingLadder = true;
+    }
+  }
+  
+  // === 5. Логика подъёма на лестницу ===
+  // Если стоим на платформе и нажимаем ВВЕРХ — проверяем, есть ли лестница над нами
+  if (keys.up && standingOnPlatform && !p.onLadder) {
+    const aboveRow = feetRow - 1;
+    if (aboveRow >= 0 && col >= 0 && col < cols) {
+      if (grid[aboveRow] && grid[aboveRow][col] === 2) {
+        p.onLadder = true;
+        p.vy = 0;
+        // Центрируем по лестнице
+        p.x = col * cellW + (cellW - PW) / 2;
+      }
+    }
+  }
+  
+  // Если на лестнице и нажимаем ВНИЗ на платформе — спускаемся
+  if (keys.down && p.onLadder && standingOnPlatform) {
+    const belowRow = feetRow + 1;
+    if (belowRow < rows && col >= 0 && col < cols) {
+      if (grid[belowRow] && grid[belowRow][col] === 2) {
+        // продолжаем быть на лестнице
+      } else {
+        p.onLadder = false;
+      }
+    }
+  }
+  
+  // === 6. Движение на лестнице ===
+  if (p.onLadder) {
+    // На лестнице — гравитации нет
+    p.vy = 0;
+    
+    if (keys.up) {
+      p.y -= LADDER_SPEED;
+    } else if (keys.down) {
+      p.y += LADDER_SPEED;
+    }
+    
+    // Центрируем по лестнице по X
+    const ladderCenterX = col * cellW + (cellW - PW) / 2;
+    p.x += (ladderCenterX - p.x) * 0.15;
+    
+    // Проверяем, всё ещё ли на лестнице
+    const newMidRow = Math.floor((p.y + PH/2) / cellH);
+    const newCol = Math.floor((p.x + PW/2) / cellW);
+    if (newMidRow >= 0 && newMidRow < rows && newCol >= 0 && newCol < cols) {
+      if (grid[newMidRow] && grid[newMidRow][newCol] === 2) {
+        // всё ещё на лестнице
+      } else {
+        // Сошли с лестницы
+        p.onLadder = false;
+      }
+    } else {
+      p.onLadder = false;
+    }
+    
+    // Если нажали вверх и достигли верха лестницы — переходим на платформу
+    const newHeadRow = Math.floor(p.y / cellH);
+    if (newHeadRow >= 0 && newCol >= 0 && newCol < cols) {
+      if (grid[newHeadRow] && grid[newHeadRow][newCol] === 1) {
+        // Достигли платформы сверху
+        p.onLadder = false;
+        p.y = newHeadRow * cellH - PH;
+      }
+    }
+  }
+  // === 7. Гравитация (если не на лестнице) ===
+  else {
+    if (!standingOnPlatform) {
+      // Падаем
+      p.vy = Math.min(p.vy + GRAVITY, MAX_FALL_SPEED);
+      p.y += p.vy;
+    } else {
+      // Стоим на платформе
+      p.vy = 0;
+      // Приземляемся точно на платформу
+      const platformTop = feetRow * cellH;
+      if (p.y + PH > platformTop) {
+        p.y = platformTop - PH;
+      }
+    }
+  }
+  
+  // === 8. Ограничение по нижней границе (не проваливаемся) ===
+  const groundY = rows * cellH - PH;
+  if (p.y > groundY) {
+    p.y = groundY;
+    p.vy = 0;
+    // Если упал в пропасть (нет платформы под ногами на самом низу) — теряем жизнь
+    // Но у нас есть платформа на row=13, так что это запасной вариант
+  }
+  
+  // === 9. Проверка падения в пропасть (если somehow провалился) ===
+  if (p.y > rows * cellH) {
+    s.lives--;
+    if (s.lives <= 0) { s.gameOver = true; finishClimb(false); return; }
+    resetPlayerPosition();
+    toast('💥 Упал! Жизней: ' + s.lives);
+    return;
+  }
+  
+  // === 10. Проверка финиша ===
+  const playerTopRow = Math.floor(p.y / cellH);
+  if (playerTopRow <= 1) {
+    const finishCol = Math.floor((p.x + PW/2) / cellW);
+    if (finishCol >= 0 && finishCol < cols && grid[0] && grid[0][finishCol] === 3) {
+      s.won = true;
+      finishClimb(true);
+      return;
+    }
+  }
+  
+  // === 11. Спавн булыжников ===
+  s.spawnTimer++;
+  if (s.spawnTimer >= s.spawnInterval) {
+    s.spawnTimer = 0;
+    s.boulders.push({
+      x: Math.random() * (cols * cellW - 30),
+      y: -30,
+      vy: 2 + s.level * 0.8 + Math.random() * 1.5,
+      r: 15
+    });
+  }
+  
+  // === 12. Движение булыжников и столкновения ===
+  s.boulders.forEach(b => {
+    b.y += b.vy;
+    const dx = (p.x + PW/2) - (b.x + b.r);
+    const dy = (p.y + PH/2) - (b.y + b.r);
+    if (Math.sqrt(dx*dx + dy*dy) < b.r + 18) b.hit = true;
+  });
+  
+  const hit = s.boulders.find(b => b.hit);
+  if (hit) {
+    s.lives--;
+    s.boulders = s.boulders.filter(b => b !== hit);
+    if (s.lives <= 0) { s.gameOver = true; finishClimb(false); return; }
+    toast('💥 Булыжник! Жизней: ' + s.lives);
+  }
+  
+  s.boulders = s.boulders.filter(b => b.y < rows * cellH + 50);
+  
+  // Обновляем HUD
+  p.col = col;
+  p.row = Math.floor((p.y + PH/2) / cellH);
+  updateClimbHUD();
+}
+
+function resetPlayerPosition() {
+  const s = state.climbState;
+  const startCol = Math.floor(s.cols/2);
+  s.player.x = startCol * s.cellW + (s.cellW - PW) / 2;
+  s.player.y = s.platformRows[0] * s.cellH - PH;
+  s.player.vy = 0;
+  s.player.onLadder = false;
+  s.player.col = startCol;
+  s.player.row = s.platformRows[0];
+}
+
+function drawClimb() {
+  const s = state.climbState;
+  const W = climbCanvas.width, H = climbCanvas.height;
+  
+  // Фон — пещера/каньон
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#2a1f14');
+  grad.addColorStop(0.3, '#5a3a1f');
+  grad.addColorStop(0.7, '#8b5a2b');
+  grad.addColorStop(1, '#a0724a');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+  
+  // Декор — камни на фоне
+  ctx.fillStyle = 'rgba(90, 58, 31, 0.3)';
+  for (let i = 0; i < 8; i++) {
+    ctx.beginPath();
+    ctx.arc((i * 97) % W, (i * 131) % H, 20 + (i % 3) * 10, 0, Math.PI*2);
+    ctx.fill();
+  }
+  
+  // Сетка уровня
+  for (let r = 0; r < s.rows; r++) {
+    for (let c = 0; c < s.cols; c++) {
+      const x = c * s.cellW, y = r * s.cellH;
+      const cell = s.grid[r][c];
+      if (cell === 1) {
+        // Платформа — камень/земля
+        const pgr = ctx.createLinearGradient(x, y, x, y + s.cellH);
+        pgr.addColorStop(0, '#7a5a3a');
+        pgr.addColorStop(1, '#5a3a1f');
+        ctx.fillStyle = pgr;
+        ctx.fillRect(x, y, s.cellW, s.cellH);
+        ctx.strokeStyle = '#3d2817';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, s.cellW, s.cellH);
+        // Камешки
+        ctx.fillStyle = '#8b6f47';
+        for (let i = 0; i < 3; i++) {
+          ctx.beginPath();
+          ctx.arc(x + 10 + i * 15, y + s.cellH/2, 3, 0, Math.PI*2);
+          ctx.fill();
+        }
+        // Травка сверху
+        ctx.fillStyle = '#4a8a5e';
+        for (let i = 0; i < 4; i++) {
+          ctx.fillRect(x + 5 + i * 12, y - 3, 2, 5);
+        }
+      } else if (cell === 2) {
+        // Лестница
+        ctx.fillStyle = '#6b4423';
+        ctx.fillRect(x + 8, y, s.cellW - 16, s.cellH);
+        ctx.strokeStyle = '#3d2817';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x + 8, y, s.cellW - 16, s.cellH);
+        // Перекладины
+        ctx.strokeStyle = '#8b5a2b';
+        ctx.lineWidth = 3;
+        for (let i = 1; i < 4; i++) {
+          ctx.beginPath();
+          ctx.moveTo(x + 8, y + i * s.cellH/4);
+          ctx.lineTo(x + s.cellW - 8, y + i * s.cellH/4);
+          ctx.stroke();
+        }
+        // Верёвки по бокам
+        ctx.strokeStyle = '#d4b896';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x + 12, y);
+        ctx.lineTo(x + 12, y + s.cellH);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x + s.cellW - 12, y);
+        ctx.lineTo(x + s.cellW - 12, y + s.cellH);
+        ctx.stroke();
+      } else if (cell === 3) {
+        // Финиш — сокровище
+        const fgr = ctx.createRadialGradient(x + s.cellW/2, y + s.cellH/2, 5, x + s.cellW/2, y + s.cellH/2, s.cellW);
+        fgr.addColorStop(0, '#fff3cd');
+        fgr.addColorStop(1, '#ffc107');
+        ctx.fillStyle = fgr;
+        ctx.fillRect(x, y, s.cellW, s.cellH);
+        ctx.strokeStyle = '#c9a227';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, s.cellW, s.cellH);
+        ctx.fillStyle = '#2a1f14';
+        ctx.font = 'bold 22px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('⭐', x + s.cellW/2, y + s.cellH/2 + 8);
+      }
+    }
+  }
+  
+  // Булыжники
+  s.boulders.forEach(b => {
+    const grd = ctx.createRadialGradient(b.x + b.r/2, b.y + b.r/2, 2, b.x + b.r, b.y + b.r, b.r);
+    grd.addColorStop(0, '#a89e94');
+    grd.addColorStop(1, '#5a5048');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(b.x + b.r, b.y + b.r, b.r, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#2a1f14';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.strokeStyle = '#3d2817';
+    ctx.beginPath();
+    ctx.moveTo(b.x + b.r - 5, b.y + b.r);
+    ctx.lineTo(b.x + b.r + 5, b.y + b.r + 3);
+    ctx.stroke();
+  });
+  
+  // Игрок
+  drawHeroCanvas(s.player.x, s.player.y, s.player.onLadder);
+}
+
+function drawHeroCanvas(x, y, onLadder) {
+  const px = x, py = y;
+  
+  // Тень
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(px + PW/2, py + PH + 2, PW/2, 4, 0, 0, Math.PI*2);
+  ctx.fill();
+  
+  // Ноги
+  ctx.fillStyle = '#f4c89a';
+  ctx.fillRect(px + 7, py + 34, 6, 10);
+  ctx.fillRect(px + 19, py + 34, 6, 10);
+  ctx.strokeStyle = '#2a1f14';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(px + 7, py + 34, 6, 10);
+  ctx.strokeRect(px + 19, py + 34, 6, 10);
+  
+  // Ботинки (коричневые)
+  ctx.fillStyle = '#6b4423';
+  ctx.fillRect(px + 5, py + 42, 9, 5);
+  ctx.fillRect(px + 18, py + 42, 9, 5);
+  ctx.strokeStyle = '#2a1f14';
+  ctx.strokeRect(px + 5, py + 42, 9, 5);
+  ctx.strokeRect(px + 18, py + 42, 9, 5);
+  
+  // Шорты (коричневые)
+  ctx.fillStyle = '#8b6f47';
+  ctx.fillRect(px + 6, py + 30, 20, 6);
+  ctx.strokeStyle = '#2a1f14';
+  ctx.strokeRect(px + 6, py + 30, 20, 6);
+  
+  // Тело — бежевая рубашка
+  ctx.fillStyle = '#d4b896';
+  ctx.fillRect(px + 5, py + 16, 22, 15);
+  ctx.strokeStyle = '#2a1f14';
+  ctx.strokeRect(px + 5, py + 16, 22, 15);
+  
+  // Карманы
+  ctx.fillStyle = '#c9a074';
+  ctx.fillRect(px + 7, py + 19, 6, 5);
+  ctx.fillRect(px + 19, py + 19, 6, 5);
+  ctx.strokeStyle = '#2a1f14';
+  ctx.lineWidth = 0.8;
+  ctx.strokeRect(px + 7, py + 19, 6, 5);
+  ctx.strokeRect(px + 19, py + 19, 6, 5);
+  
+  // Пуговицы
+  ctx.fillStyle = '#5a3a1f';
+  ctx.beginPath(); ctx.arc(px + 16, py + 22, 1, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(px + 16, py + 27, 1, 0, Math.PI*2); ctx.fill();
+  
+  // Пояс
+  ctx.fillStyle = '#5a3a1f';
+  ctx.fillRect(px + 5, py + 29, 22, 2);
+  ctx.fillStyle = '#c9a227';
+  ctx.fillRect(px + 14, py + 29, 4, 2);
+  
+  // Сумка через плечо
+  ctx.strokeStyle = '#5a3a1f';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(px + 8, py + 16);
+  ctx.lineTo(px + 22, py + 30);
+  ctx.stroke();
+  ctx.fillStyle = '#8b5a2b';
+  ctx.fillRect(px + 20, py + 26, 9, 7);
+  ctx.strokeStyle = '#2a1f14';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(px + 20, py + 26, 9, 7);
+  
+  // Руки
+  ctx.fillStyle = '#f4c89a';
+  ctx.fillRect(px + 1, py + 18, 5, 10);
+  ctx.fillRect(px + 26, py + 18, 5, 10);
+  ctx.strokeStyle = '#2a1f14';
+  ctx.strokeRect(px + 1, py + 18, 5, 10);
+  ctx.strokeRect(px + 26, py + 18, 5, 10);
+  
+  // Лупа в правой руке
+  ctx.fillStyle = '#6b4423';
+  ctx.fillRect(px + 27, py + 24, 2, 5);
+  ctx.strokeStyle = '#c9a227';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(px + 30, py + 22, 4, 0, Math.PI*2);
+  ctx.stroke();
+  ctx.fillStyle = '#87ceeb';
+  ctx.beginPath();
+  ctx.arc(px + 30, py + 22, 3, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.beginPath();
+  ctx.arc(px + 29, py + 21, 1, 0, Math.PI*2);
+  ctx.fill();
+  
+  // Голова
+  ctx.fillStyle = '#f4c89a';
+  ctx.beginPath();
+  ctx.arc(px + 16, py + 10, 9, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#2a1f14';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+  
+  // Уши
+  ctx.fillStyle = '#f4c89a';
+  ctx.beginPath(); ctx.arc(px + 7, py + 11, 2.5, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.arc(px + 25, py + 11, 2.5, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  
+  // Волосы
+  ctx.fillStyle = '#6b4423';
+  ctx.beginPath();
+  ctx.arc(px + 16, py + 6, 8, Math.PI, Math.PI*2);
+  ctx.fill();
+  
+  // ПРОБКОВЫЙ ШЛЕМ (бежевый)
+  ctx.fillStyle = '#d4b896';
+  ctx.beginPath();
+  ctx.ellipse(px + 16, py + 5, 12, 5, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#2a1f14';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+  ctx.fillStyle = '#e8c39e';
+  ctx.beginPath();
+  ctx.ellipse(px + 16, py + 4, 11, 4, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#2a1f14';
+  ctx.stroke();
+  // Тёмная лента
+  ctx.strokeStyle = '#5a3a1f';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(px + 4, py + 6);
+  ctx.lineTo(px + 28, py + 6);
+  ctx.stroke();
+  // Пробковые точки
+  ctx.fillStyle = '#8b6f47';
+  ctx.beginPath(); ctx.arc(px + 11, py + 4, 1, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(px + 16, py + 3, 1, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(px + 21, py + 4, 1, 0, Math.PI*2); ctx.fill();
+  // Верхушка
+  ctx.beginPath(); ctx.arc(px + 16, py + 1, 1.5, 0, Math.PI*2); ctx.fill();
+  
+  // Глаза
+  ctx.fillStyle = 'white';
+  ctx.beginPath(); ctx.arc(px + 12, py + 10, 2.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(px + 20, py + 10, 2.5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#6b4423';
+  ctx.beginPath(); ctx.arc(px + 12.5, py + 10.5, 1.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(px + 20.5, py + 10.5, 1.5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'white';
+  ctx.beginPath(); ctx.arc(px + 13, py + 10, 0.6, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(px + 21, py + 10, 0.6, 0, Math.PI*2); ctx.fill();
+  
+  // Брови
+  ctx.strokeStyle = '#5a3a1f';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(px + 9, py + 7);
+  ctx.lineTo(px + 15, py + 7);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(px + 17, py + 7);
+  ctx.lineTo(px + 23, py + 7);
+  ctx.stroke();
+  
+  // Нос
+  ctx.fillStyle = '#e8a87c';
+  ctx.beginPath();
+  ctx.arc(px + 16, py + 12, 1.5, 0, Math.PI*2);
+  ctx.fill();
+  
+  // Улыбка
+  ctx.strokeStyle = '#2a1f14';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(px + 16, py + 13, 2.5, 0.1, Math.PI - 0.1);
+  ctx.stroke();
+  
+  // Румянец
+  ctx.fillStyle = '#ffb3b3';
+  ctx.globalAlpha = 0.5;
+  ctx.beginPath(); ctx.arc(px + 9, py + 12, 1.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(px + 23, py + 12, 1.5, 0, Math.PI*2); ctx.fill();
+  ctx.globalAlpha = 1;
+  
+  // Индикатор "на лестнице"
+  if (onLadder) {
+    ctx.strokeStyle = '#ffeb3b';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([3, 3]);
+    ctx.strokeRect(px - 2, py - 2, PW + 4, PH + 4);
+    ctx.setLineDash([]);
+  }
+}
+
+function finishClimb(won) {
+  cancelAnimationFrame(climbAnim);
+  if (won) {
+    showResult('🎉 Вершина покорена!',
+      `<p>Ты добрался до места раскопок!</p>
+       <p>Теперь приступим к поиску костей 🦴</p>`,
+      () => startMatch3());
+  } else {
+    showResult('💥 Не повезло!',
+      `<p>Булыжники оказались хитрее...</p>
+       <p>Попробуй ещё раз!</p>`,
+      () => showScreen('levelScreen'));
+  }
+}
+
+function exitClimb() {
+  if (climbAnim) cancelAnimationFrame(climbAnim);
+  state.climbState = null;
+  showScreen('levelScreen');
+}
+
+// ============ МИНИ-ИГРА 2: MATCH-3 ============
+let matchSelected = null;
+
+function startMatch3() {
+  state.targetScore = 500 + Math.floor(Math.random() * 501);
+  showScreen('matchScreen');
+  document.getElementById('matchTarget').textContent = state.targetScore;
+  
+  const board = [];
+  for (let r = 0; r < 16; r++) {
+    board[r] = [];
+    for (let c = 0; c < 16; c++) {
+      let item;
+      do {
+        item = Math.floor(Math.random() * 3);
+      } while (
+        (c >= 2 && board[r][c-1] === item && board[r][c-2] === item) ||
+        (r >= 2 && board[r-1][c] === item && board[r-2][c] === item)
+      );
+      board[r][c] = item;
+    }
+  }
+  
+  state.matchState = { board, score: 0, moves: 30, busy: false };
+  matchSelected = null;
+  renderMatchBoard();
+  updateMatchHUD();
+}
+
+function renderMatchBoard() {
+  const board = state.matchState.board;
+  const container = document.getElementById('matchBoard');
+  container.innerHTML = '';
+  for (let r = 0; r < 16; r++) {
+    for (let c = 0; c < 16; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+      const item = board[r][c];
+      if (item !== null && item !== undefined) {
+        cell.innerHTML = MATCH_ITEMS[item].svg;
+      }
+      cell.onclick = () => onCellClick(r, c);
+      container.appendChild(cell);
+    }
+  }
+}
+
+function onCellClick(r, c) {
+  const s = state.matchState;
+  if (s.busy || s.moves <= 0) return;
+  if (s.board[r][c] === null) return;
+  
+  if (!matchSelected) {
+    matchSelected = { r, c };
+    highlightCell(r, c, true);
+  } else {
+    const dr = Math.abs(matchSelected.r - r);
+    const dc = Math.abs(matchSelected.c - c);
+    highlightCell(matchSelected.r, matchSelected.c, false);
+    
+    if ((dr === 1 && dc === 0) || (dr === 0 && dc === 1)) {
+      swap(matchSelected.r, matchSelected.c, r, c);
+    }
+    matchSelected = null;
+  }
+}
+
+function highlightCell(r, c, on) {
+  const idx = r * 16 + c;
+  const cells = document.getElementById('matchBoard').children;
+  if (cells[idx]) {
+    if (on) cells[idx].classList.add('selected');
+    else cells[idx].classList.remove('selected');
+  }
+}
+
+function swap(r1, c1, r2, c2) {
+  const s = state.matchState;
+  s.busy = true;
+  const b = s.board;
+  [b[r1][c1], b[r2][c2]] = [b[r2][c2], b[r1][c1]];
+  renderMatchBoard();
+  
+  setTimeout(() => {
+    const matches = findMatches();
+    if (matches.length === 0) {
+      [b[r1][c1], b[r2][c2]] = [b[r2][c2], b[r1][c1]];
+      renderMatchBoard();
+      s.busy = false;
+    } else {
+      s.moves--;
+      processMatches(matches);
+    }
+  }, 200);
+}
+
+function findMatches() {
+  const b = state.matchState.board;
+  const matched = new Set();
+  
+  for (let r = 0; r < 16; r++) {
+    let run = 1;
+    for (let c = 1; c <= 16; c++) {
+      if (c < 16 && b[r][c] !== null && b[r][c] === b[r][c-1]) run++;
+      else {
+        if (run >= 3) for (let k = 1; k <= run; k++) matched.add(`${r},${c-k}`);
+        run = 1;
+      }
+    }
+  }
+  for (let c = 0; c < 16; c++) {
+    let run = 1;
+    for (let r = 1; r <= 16; r++) {
+      if (r < 16 && b[r][c] !== null && b[r][c] === b[r-1][c]) run++;
+      else {
+        if (run >= 3) for (let k = 1; k <= run; k++) matched.add(`${r-k},${c}`);
+        run = 1;
+      }
+    }
+  }
+  return Array.from(matched).map(s => s.split(',').map(Number));
+}
+
+function processMatches(matches) {
+  const s = state.matchState;
+  const b = s.board;
+  const lineScores = calculateLineScores();
+  s.score += lineScores;
+  
+  matches.forEach(([r, c]) => {
+    const idx = r * 16 + c;
+    const cell = document.getElementById('matchBoard').children[idx];
+    if (cell) cell.classList.add('matched');
+  });
+  
+  setTimeout(() => {
+    matches.forEach(([r, c]) => { b[r][c] = null; });
+    dropTiles();
+    fillEmpty();
+    renderMatchBoard();
+    updateMatchHUD();
+    
+    setTimeout(() => {
+      const newMatches = findMatches();
+      if (newMatches.length > 0) processMatches(newMatches);
+      else { s.busy = false; checkMatchEnd(); }
+    }, 200);
+  }, 400);
+}
+
+function calculateLineScores() {
+  const b = state.matchState.board;
+  let score = 0;
+  
+  for (let r = 0; r < 16; r++) {
+    let c = 0;
+    while (c < 16) {
+      if (b[r][c] === null) { c++; continue; }
+      let len = 1;
+      while (c + len < 16 && b[r][c + len] === b[r][c]) len++;
+      if (len >= 3) {
+        if (len === 3) score += 10;
+        else if (len === 4) score += 25;
+        else if (len >= 5) score += 35;
+      }
+      c += len;
+    }
+  }
+  for (let c = 0; c < 16; c++) {
+    let r = 0;
+    while (r < 16) {
+      if (b[r][c] === null) { r++; continue; }
+      let len = 1;
+      while (r + len < 16 && b[r + len][c] === b[r][c]) len++;
+      if (len >= 3) {
+        if (len === 3) score += 10;
+        else if (len === 4) score += 25;
+        else if (len >= 5) score += 35;
+      }
+      r += len;
+    }
+  }
+  return score;
+}
+
+function dropTiles() {
+  const b = state.matchState.board;
+  for (let c = 0; c < 16; c++) {
+    let writeRow = 15;
+    for (let r = 15; r >= 0; r--) {
+      if (b[r][c] !== null) {
+        b[writeRow][c] = b[r][c];
+        if (writeRow !== r) b[r][c] = null;
+        writeRow--;
+      }
+    }
+  }
+}
+
+function fillEmpty() {
+  const b = state.matchState.board;
+  for (let r = 0; r < 16; r++) {
+    for (let c = 0; c < 16; c++) {
+      if (b[r][c] === null) b[r][c] = Math.floor(Math.random() * 3);
+    }
+  }
+}
+
+function updateMatchHUD() {
+  const s = state.matchState;
+  document.getElementById('matchScore').textContent = s.score;
+  document.getElementById('matchMoves').textContent = s.moves;
+  const pct = Math.min(100, (s.score / state.targetScore) * 100);
+  document.getElementById('matchProgress').style.width = pct + '%';
+}
+
+function checkMatchEnd() {
+  const s = state.matchState;
+  if (s.score >= state.targetScore) finishMatch(true);
+  else if (s.moves <= 0) finishMatch(false);
+}
+
+function finishMatch(won) {
+  if (won) {
+    const dino = DINOS[Math.floor(Math.random() * DINOS.length)];
+    if (!state.user.collection[dino.id]) state.user.collection[dino.id] = 0;
+    state.user.collection[dino.id]++;
+    DB.saveProgress(state.user.email, state.user.collection);
+    
+    const count = state.user.collection[dino.id];
+    let starsText = '⭐';
+    if (count >= 10) starsText = '⭐⭐';
+    if (count >= 25) starsText = '⭐⭐⭐';
+    
+    showResult('🦴 НАХОДКА!',
+      `<p style="font-size: 1.2em;">Ты нашёл <b>${dino.name}</b>!</p>
+       <div style="margin: 15px auto;">${dinoSVG(dino, 120)}</div>
+       <p>Найдено раз: <b>${count}</b> ${starsText}</p>
+       <p style="font-style: italic; color: var(--jungle);">"${dino.fact}"</p>`,
+      () => showScreen('menuScreen'));
+  } else {
+    showResult('😔 Не хватило очков',
+      `<p>Ты набрал <b>${state.matchState.score}</b> из <b>${state.targetScore}</b></p>
+       <p>Попробуй ещё раз!</p>`,
+      () => showScreen('levelScreen'));
+  }
+}
+
+function exitMatch() {
+  state.matchState = null;
+  showScreen('levelScreen');
+}
+
+// ============ ЭНЦИКЛОПЕДИЯ ============
+function renderEncyclopedia() {
+  const grid = document.getElementById('encyGrid');
+  grid.innerHTML = '';
+  const collection = state.user ? state.user.collection : {};
+  
+  DINOS.forEach(dino => {
+    const count = collection[dino.id] || 0;
+    const card = document.createElement('div');
+    card.className = 'dino-card' + (count === 0 ? ' locked' : '');
+    
+    let stars = '';
+    for (let i = 0; i < 3; i++) {
+      const active = (i === 0 && count >= 1) || (i === 1 && count >= 10) || (i === 2 && count >= 25);
+      stars += `<span class="star ${active ? 'active' : ''}">★</span>`;
+    }
+    
+    card.innerHTML = `
+      <div class="dino-icon">${count > 0 ? dinoSVG(dino, 80) : '<svg viewBox="0 0 80 80" width="80" height="80"><text x="40" y="50" text-anchor="middle" font-size="40">❓</text></svg>'}</div>
+      <div class="dino-name">${count > 0 ? dino.name : '???'}</div>
+      <div class="stars">${count > 0 ? stars : ''}</div>
+      ${count > 0 ? `<div style="font-size: 0.75em; color: var(--stone); margin-top: 4px;">×${count}</div>` : ''}
+    `;
+    
+    if (count > 0) card.onclick = () => showDinoModal(dino, count);
+    grid.appendChild(card);
+  });
+}
+
+function showDinoModal(dino, count) {
+  const content = document.getElementById('modalContent');
+  let html = `
+    <div class="dino-icon">${dinoSVG(dino, 150)}</div>
+    <h2 style="text-align: center;">${dino.name}</h2>
+    <div style="text-align: center; font-size: 1.3em; margin: 10px 0;">
+      ${[0,1,2].map(i => {
+        const active = (i === 0 && count >= 1) || (i === 1 && count >= 10) || (i === 2 && count >= 25);
+        return `<span class="star ${active ? 'active' : ''}">★</span>`;
+      }).join('')}
+    </div>
+    <p style="text-align: center; color: var(--stone);">Найдено раз: ${count}</p>
+  `;
+  
+  if (count >= 1) {
+    html += `<p><b>Краткая справка:</b> ${dino.short}</p>`;
+    html += `<div class="fact"> ${dino.fact}</div>`;
+  }
+  if (count >= 10) {
+    html += `<p><b>Подробная статья:</b> ${dino.full}</p>`;
+  }
+  if (count >= 25) {
+    html += `<div class="fact"> <b>Интересный факт:</b> ${dino.funFact}</div>`;
+  }
+  
+  content.innerHTML = html;
+  document.getElementById('dinoModal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('dinoModal').classList.remove('active');
+}
+
+let resultCallback = null;
+function showResult(title, html, callback) {
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultContent').innerHTML = html;
+  resultCallback = callback;
+  document.getElementById('resultModal').classList.add('active');
+}
+function closeResult() {
+  document.getElementById('resultModal').classList.remove('active');
+  if (resultCallback) { resultCallback(); resultCallback = null; }
+}
+
+// ============ УПРАВЛЕНИЕ ============
+const keys = { left: false, right: false, up: false, down: false };
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A' || e.key === 'ф' || e.key === 'Ф') keys.left = true;
+  if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D' || e.key === 'в' || e.key === 'В') keys.right = true;
+  if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === 'ц' || e.key === 'Ц') keys.up = true;
+  if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы') keys.down = true;
+});
+document.addEventListener('keyup', e => {
+  if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A' || e.key === 'ф' || e.key === 'Ф') keys.left = false;
+  if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D' || e.key === 'в' || e.key === 'В') keys.right = false;
+  if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === 'ц' || e.key === 'Ц') keys.up = false;
+  if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы') keys.down = false;
+});
+
+let touchStartX = 0, touchStartY = 0;
+climbCanvas.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  e.preventDefault();
+}, { passive: false });
+climbCanvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const dx = e.touches[0].clientX - touchStartX;
+  const dy = e.touches[0].clientY - touchStartY;
+  keys.left = dx < -10;
+  keys.right = dx > 10;
+  keys.up = dy < -10;
+  keys.down = dy > 10;
+}, { passive: false });
+climbCanvas.addEventListener('touchend', () => {
+  keys.left = keys.right = keys.up = keys.down = false;
+});
+
+document.getElementById('dinoModal').onclick = e => {
+  if (e.target.id === 'dinoModal') closeModal();
+};
+document.getElementById('resultModal').onclick = e => {
+  if (e.target.id === 'resultModal') closeResult();
+};
+
+updateMenu();
+</script>
+</body>
+</html>
