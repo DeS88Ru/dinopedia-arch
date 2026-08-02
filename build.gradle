@@ -1,0 +1,47 @@
+plugins {
+    id 'java'
+    id 'org.teavm' version '0.15.0'
+}
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+compileJava.options.encoding = 'UTF-8'
+
+dependencies {
+    implementation teavm.libs.jso
+    implementation teavm.libs.jsoApis
+}
+
+teavm.js {
+    mainClass = 'ru.des88.dinopedia.Main'
+    outputDir = file("${buildDir}/generated/teavm")
+    targetFileName = 'game.js'
+    obfuscated = false
+    sourceMap = false
+}
+
+// Copy all web assets into a distributable folder
+tasks.register('copyWebApp', Copy) {
+    dependsOn 'generateJavaScript'
+    from('src/main/webapp') {
+        into '.'
+    }
+    from('assets') {
+        into 'assets'
+    }
+    from("${buildDir}/generated/teavm/js") {
+        into '.'
+    }
+    into "${buildDir}/dist"
+}
+
+tasks.register('buildWebApp') {
+    dependsOn 'generateJavaScript', 'copyWebApp'
+}
